@@ -22,13 +22,21 @@
 - shadcn/ui is initialized via `components.json` with `style: "radix-maia"`, `rsc: true`, `iconLibrary: "lucide"`, aliases under `@/*`, and UI components in `components/ui`.
 - Tailwind is v4 through `@tailwindcss/postcss`; the design system is already defined in `app/globals.css` (`@theme inline` plus CSS variables). Do not create a Tailwind config or introduce colors/styles outside those tokens unless the design system is intentionally updated there.
 - Prefer existing shadcn components from `components/ui` over custom markup; especially use Data Table patterns for tables, `sonner` for notifications/mutation feedback, and Combobox for select/search-select flows.
-- UX is a requirement, not polish: new async UI should include loading skeletons/placeholders, disabled or pending submit states, and success/error notifications where the user needs feedback.
+- UX is a requirement, not polish: design every screen as a responsive web app for mobile, tablet, and desktop, and include loading skeletons/placeholders, disabled or pending submit states, and success/error notifications where the user needs feedback.
 
 ## Data fetching and mutations
 
 - Use TanStack Query for server reads and writes. Keep queries and mutations in custom hooks, then import those hooks into components.
 - Query/mutation hooks should own query keys, options, invalidation, optimistic or pending behavior, and error handling; components should mostly render states and call hook APIs.
 - Use Zustand for shared client state/context-like concerns. Keep server state in TanStack Query; do not duplicate fetched data into Zustand unless there is a deliberate derived UI-state reason.
+
+## Data validation
+
+- Use Zod for validation of data/forms/etc... The `zod` package is installed, keep the folder structure well-organized, and export schemas from `lib/validation/schema-name.ts` for easy imports across the app.
+
+## Imports
+
+- Absolute imports are configured with `@/*` pointing to the repo root. Use absolute imports for all internal modules, and avoid relative imports except for external packages.
 
 ## Existing instruction files
 
