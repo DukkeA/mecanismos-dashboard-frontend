@@ -28,6 +28,7 @@
 
 - Use TanStack Query for server reads and writes. Keep queries and mutations in custom hooks, then import those hooks into components.
 - Query/mutation hooks should own query keys, options, invalidation, optimistic or pending behavior, and error handling; components should mostly render states and call hook APIs.
+- Use Zustand for shared client state/context-like concerns. Keep server state in TanStack Query; do not duplicate fetched data into Zustand unless there is a deliberate derived UI-state reason.
 
 ## Existing instruction files
 
