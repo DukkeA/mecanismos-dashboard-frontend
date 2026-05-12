@@ -20,8 +20,14 @@
 - Real entrypoints are `app/layout.tsx`, `app/page.tsx`, and `app/globals.css`; there is no `src/` directory.
 - `app/layout.tsx` owns the global `TooltipProvider` and `Toaster`. Preserve that shell unless intentionally changing app-wide providers.
 - shadcn/ui is initialized via `components.json` with `style: "radix-maia"`, `rsc: true`, `iconLibrary: "lucide"`, aliases under `@/*`, and UI components in `components/ui`.
-- Tailwind is v4 through `@tailwindcss/postcss`; theme tokens live in `app/globals.css` (`@theme inline`). Do not create a Tailwind config unless the toolchain changes.
-- Prefer composing existing shadcn components from `components/ui` and semantic tokens (`bg-background`, `text-muted-foreground`, etc.) over custom styled markup.
+- Tailwind is v4 through `@tailwindcss/postcss`; the design system is already defined in `app/globals.css` (`@theme inline` plus CSS variables). Do not create a Tailwind config or introduce colors/styles outside those tokens unless the design system is intentionally updated there.
+- Prefer existing shadcn components from `components/ui` over custom markup; especially use Data Table patterns for tables, `sonner` for notifications/mutation feedback, and Combobox for select/search-select flows.
+- UX is a requirement, not polish: new async UI should include loading skeletons/placeholders, disabled or pending submit states, and success/error notifications where the user needs feedback.
+
+## Data fetching and mutations
+
+- Use TanStack Query for server reads and writes. Keep queries and mutations in custom hooks, then import those hooks into components.
+- Query/mutation hooks should own query keys, options, invalidation, optimistic or pending behavior, and error handling; components should mostly render states and call hook APIs.
 
 ## Existing instruction files
 
