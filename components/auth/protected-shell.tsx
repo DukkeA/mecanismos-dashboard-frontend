@@ -3,10 +3,13 @@
 import { useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { LogoutButton } from "@/components/auth/logout-button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  SidebarInset,
+  SidebarProvider,
+} from "@/components/ui/sidebar";
 import { useMeQuery } from "@/hooks/use-auth";
 import { sanitizeNextPath } from "@/lib/auth/backend";
 
@@ -38,37 +41,40 @@ export function ProtectedShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-dvh bg-background">
-      <header className="border-b bg-card/60">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-          <div className="flex flex-col gap-1">
-            <p className="text-sm text-muted-foreground">Mecanismos Dashboard</p>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-semibold tracking-tight">Hola, {user.name}</h1>
-              <Badge variant="secondary">{user.role}</Badge>
-            </div>
-          </div>
-          <LogoutButton />
+    <div className="min-h-dvh bg-background [--header-height:calc(--spacing(14))]">
+      <SidebarProvider className="flex min-h-dvh flex-col">
+        <SiteHeader />
+        <div className="flex flex-1">
+          <AppSidebar user={user} />
+          <SidebarInset>{children}</SidebarInset>
         </div>
-      </header>
-      {children}
+      </SidebarProvider>
     </div>
   );
 }
 
 export function ProtectedShellSkeleton() {
   return (
-    <main className="min-h-dvh bg-background px-4 py-6 sm:px-6 lg:px-8">
-      <Card className="mx-auto w-full max-w-3xl">
-        <CardHeader>
-          <CardTitle>Verificando sesión</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <Skeleton className="h-5 w-2/3" />
-          <Skeleton className="h-24 w-full rounded-2xl" />
-          <Skeleton className="h-24 w-full rounded-2xl" />
-        </CardContent>
-      </Card>
-    </main>
+    <div className="min-h-dvh bg-background [--header-height:calc(--spacing(14))]">
+      <header className="flex h-(--header-height) items-center gap-3 border-b px-4">
+        <Skeleton className="size-8 rounded-lg" />
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="ml-auto hidden h-9 w-80 rounded-4xl sm:block" />
+      </header>
+      <div className="flex min-h-[calc(100dvh-var(--header-height))]">
+        <aside className="hidden w-64 border-r p-3 md:flex md:flex-col md:gap-3">
+          <Skeleton className="h-12 w-full rounded-xl" />
+          <Skeleton className="h-9 w-full rounded-lg" />
+          <Skeleton className="h-9 w-full rounded-lg" />
+          <Skeleton className="h-9 w-4/5 rounded-lg" />
+          <Skeleton className="mt-auto h-14 w-full rounded-xl" />
+        </aside>
+        <main className="flex flex-1 flex-col gap-4 p-4">
+          <p className="sr-only">Verificando sesión</p>
+          <Skeleton className="h-28 w-full rounded-2xl" />
+          <Skeleton className="h-28 w-full rounded-2xl" />
+        </main>
+      </div>
+    </div>
   );
 }

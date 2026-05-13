@@ -5,7 +5,7 @@ import { ReactNode } from "react";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { RecoveryOnboarding } from "@/components/auth/recovery-onboarding";
+import { RecoveryPhraseDialog } from "@/components/auth/recovery-phrase-dialog";
 
 vi.mock("sonner", () => ({
   toast: {
@@ -24,15 +24,9 @@ function renderWithQuery(ui: ReactNode) {
   );
 }
 
-describe("recovery onboarding", () => {
+describe("recovery phrase dialog", () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_API_BASE_URL = "https://backend.example.test";
-  });
-
-  it("does not show onboarding when the dashboard disables the check", () => {
-    renderWithQuery(<RecoveryOnboarding enabled={false} />);
-
-    expect(screen.queryByText("Activá tu frase de recuperación")).not.toBeInTheDocument();
   });
 
   it("loads recovery status, generates a one-time phrase, and requires offline acknowledgement", async () => {
@@ -55,16 +49,16 @@ describe("recovery onboarding", () => {
         }),
       );
     vi.stubGlobal("fetch", fetchMock);
-    renderWithQuery(<RecoveryOnboarding enabled />);
+    renderWithQuery(<RecoveryPhraseDialog open onOpenChange={vi.fn()} />);
 
-    expect(await screen.findByText("Activá tu frase de recuperación")).toBeVisible();
+    expect(await screen.findByText("Guardala fuera del sistema")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Generar frase" }));
     expect(await screen.findByText("Debe tener al menos 8 caracteres.")).toBeVisible();
 
     await user.type(screen.getByLabelText("Confirmá tu contraseña actual"), "current123");
     await user.click(screen.getByRole("button", { name: "Generar frase" }));
 
-    expect(await screen.findByText("Guardá esta frase ahora")).toBeVisible();
+    expect(await screen.findByText("Guardala ahora")).toBeVisible();
     expect(screen.getByText("uno dos tres cuatro cinco seis siete ocho")).toBeVisible();
     expect(screen.getByRole("button", { name: "Terminar" })).toBeDisabled();
 

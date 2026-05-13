@@ -4,6 +4,7 @@ import { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import ProtectedLayout from "@/app/(protected)/layout";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const replaceMock = vi.fn();
 
@@ -13,17 +14,15 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-vi.mock("@/components/auth/logout-button", () => ({
-  LogoutButton: () => <button>Salir</button>,
-}));
-
 function renderWithQuery(ui: ReactNode) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
 
   return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>{ui}</TooltipProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -49,9 +48,9 @@ describe("protected layout", () => {
 
     renderWithQuery(<ProtectedLayout><p>Contenido protegido</p></ProtectedLayout>);
 
-    expect(screen.getByText("Verificando sesión")).toBeVisible();
+    expect(screen.getByText("Verificando sesión")).toBeInTheDocument();
     expect(screen.queryByText("Contenido protegido")).not.toBeInTheDocument();
-    expect(await screen.findByText("Hola, User")).toBeVisible();
+    expect(await screen.findByText("user@example.com")).toBeVisible();
     expect(screen.getByText("Contenido protegido")).toBeVisible();
   });
 
