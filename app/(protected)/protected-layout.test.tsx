@@ -4,12 +4,14 @@ import { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import ProtectedLayout from "@/app/(protected)/layout";
+import NotFound from "@/app/(protected)/not-found";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const replaceMock = vi.fn();
+let pathnameMock = "/dashboard";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/dashboard",
+  usePathname: () => pathnameMock,
   useRouter: () => ({ replace: replaceMock }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -29,6 +31,7 @@ function renderWithQuery(ui: ReactNode) {
 describe("protected layout", () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_API_BASE_URL = "https://backend.example.test";
+    pathnameMock = "/dashboard";
     replaceMock.mockClear();
   });
 
@@ -86,5 +89,30 @@ describe("protected layout", () => {
 
     await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/change-password"));
     expect(screen.queryByText("Secret")).not.toBeInTheDocument();
+  });
+
+  it("renders not found content inside the protected sidebar shell", async () => {
+    pathnameMock = "/ruta-inexistente";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json({
+          id: "u1",
+          email: "user@example.com",
+          name: "User",
+          role: "ADMIN",
+          mustChangePassword: false,
+        }),
+      ),
+    );
+
+    renderWithQuery(<ProtectedLayout><NotFound /></ProtectedLayout>);
+
+    expect(await screen.findAllByText("Ruta no encontrada")).not.toHaveLength(0);
+    expect(screen.getAllByText("Mecanismos")).not.toHaveLength(0);
+    expect(screen.getByRole("link", { name: "Volver al dashboard" })).toHaveAttribute(
+      "href",
+      "/dashboard",
+    );
   });
 });

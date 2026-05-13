@@ -27,7 +27,7 @@ const breadcrumbLabels: Record<string, string> = {
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const currentPage = breadcrumbLabels[pathname] ?? "Mecanismos";
+  const currentPage = breadcrumbLabels[pathname] ?? "Ruta no encontrada";
 
   return (
     <header className="sticky top-0 z-50 flex w-full items-center border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
