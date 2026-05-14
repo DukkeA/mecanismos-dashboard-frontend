@@ -63,8 +63,6 @@ const modules = [
     name: "Clientes",
     url: "/customers",
     icon: UsersRoundIcon,
-    badge: "Próximo",
-    disabled: true,
   },
   {
     name: "Vehículos",
