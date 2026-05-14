@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Fragment } from "react";
 
 import { SearchForm } from "@/components/search-form";
 import {
@@ -25,9 +27,17 @@ const breadcrumbLabels: Record<string, string> = {
   "/settings": "Configuración",
 };
 
+function getBreadcrumbs(pathname: string) {
+  if (pathname.startsWith("/customers/")) {
+    return ["Clientes", "Detalle"];
+  }
+
+  return [breadcrumbLabels[pathname] ?? "Ruta no encontrada"];
+}
+
 export function SiteHeader() {
   const pathname = usePathname();
-  const currentPage = breadcrumbLabels[pathname] ?? "Ruta no encontrada";
+  const breadcrumbs = getBreadcrumbs(pathname);
 
   return (
     <header className="sticky top-0 z-50 flex w-full items-center border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
@@ -40,12 +50,29 @@ export function SiteHeader() {
         <Breadcrumb className="hidden md:block">
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard">Mecanismos</BreadcrumbLink>
+              <BreadcrumbLink asChild>
+                <Link href="/dashboard">Mecanismos</Link>
+              </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{currentPage}</BreadcrumbPage>
-            </BreadcrumbItem>
+            {breadcrumbs.map((label, index) => {
+              const isLast = index === breadcrumbs.length - 1;
+
+              return (
+                <Fragment key={label}>
+                  {index > 0 ? <BreadcrumbSeparator /> : null}
+                  <BreadcrumbItem>
+                    {isLast ? (
+                      <BreadcrumbPage>{label}</BreadcrumbPage>
+                    ) : (
+                      <BreadcrumbLink asChild>
+                        <Link href="/customers">{label}</Link>
+                      </BreadcrumbLink>
+                    )}
+                  </BreadcrumbItem>
+                </Fragment>
+              );
+            })}
           </BreadcrumbList>
         </Breadcrumb>
         <SearchForm className="ml-auto hidden w-full sm:flex sm:w-auto" />
