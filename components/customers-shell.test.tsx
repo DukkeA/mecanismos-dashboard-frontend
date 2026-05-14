@@ -60,7 +60,27 @@ describe("customers shell integration", () => {
       "href",
       "/customers",
     );
-    expect(screen.getAllByText("Próximo")).toHaveLength(3);
+    expect(screen.getAllByRole("link", { name: /Vehículos/ })[0]).toHaveAttribute(
+      "href",
+      "/vehicles",
+    );
+    expect(screen.getAllByRole("link", { name: /Componentes/ })[0]).toHaveAttribute(
+      "href",
+      "/components",
+    );
+    expect(screen.getAllByText("Próximo")).toHaveLength(2);
+    expect(screen.getByText("Detalle")).toBeVisible();
+  });
+
+  it("renders vehicle and component breadcrumbs", () => {
+    pathnameMock = "/components/p1";
+
+    renderWithProviders(<SiteHeader />);
+
+    expect(screen.getByRole("link", { name: "Componentes" })).toHaveAttribute(
+      "href",
+      "/components",
+    );
     expect(screen.getByText("Detalle")).toBeVisible();
   });
 
@@ -88,11 +108,38 @@ describe("customers shell integration", () => {
 
     await userEvent.type(screen.getByLabelText("Buscar"), "sin resultados");
 
-    expect(await screen.findByText("No encontramos clientes.")).toBeVisible();
+    expect(await screen.findByText("No encontramos resultados.")).toBeVisible();
     expect(screen.getByRole("link", { name: "Ir a clientes" })).toHaveAttribute(
       "href",
       "/customers",
     );
     expect(pushMock).not.toHaveBeenCalled();
+  });
+
+  it("searches vehicles and components globally without breaking customer results", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/vehicles/options")) {
+          return Response.json({
+            data: [{ id: "v1", label: "AA123BB", description: "Volvo FH" }],
+          });
+        }
+        if (url.includes("/components/options")) {
+          return Response.json({
+            data: [{ id: "p1", label: "ALT-90", description: "Bosch · ALT" }],
+          });
+        }
+        return Response.json([]);
+      }),
+    );
+
+    renderWithProviders(<SearchForm />);
+
+    await userEvent.type(screen.getByLabelText("Buscar"), "alt");
+    expect(await screen.findByText("AA123BB")).toBeVisible();
+    await userEvent.click(screen.getByRole("button", { name: "Abrir ALT-90" }));
+
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/components/p1"));
   });
 });

@@ -21,6 +21,7 @@ const breadcrumbLabels: Record<string, string> = {
   "/orders": "Órdenes",
   "/customers": "Clientes",
   "/vehicles": "Vehículos",
+  "/components": "Componentes",
   "/workshop": "Taller",
   "/calendar": "Calendario",
   "/reports": "Reportes",
@@ -29,10 +30,18 @@ const breadcrumbLabels: Record<string, string> = {
 
 function getBreadcrumbs(pathname: string) {
   if (pathname.startsWith("/customers/")) {
-    return ["Clientes", "Detalle"];
+    return [{ label: "Clientes", href: "/customers" }, { label: "Detalle" }];
   }
 
-  return [breadcrumbLabels[pathname] ?? "Ruta no encontrada"];
+  if (pathname.startsWith("/vehicles/")) {
+    return [{ label: "Vehículos", href: "/vehicles" }, { label: "Detalle" }];
+  }
+
+  if (pathname.startsWith("/components/")) {
+    return [{ label: "Componentes", href: "/components" }, { label: "Detalle" }];
+  }
+
+  return [{ label: breadcrumbLabels[pathname] ?? "Ruta no encontrada" }];
 }
 
 export function SiteHeader() {
@@ -55,18 +64,18 @@ export function SiteHeader() {
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
-            {breadcrumbs.map((label, index) => {
+            {breadcrumbs.map((breadcrumb, index) => {
               const isLast = index === breadcrumbs.length - 1;
 
               return (
-                <Fragment key={label}>
+                <Fragment key={breadcrumb.label}>
                   {index > 0 ? <BreadcrumbSeparator /> : null}
                   <BreadcrumbItem>
                     {isLast ? (
-                      <BreadcrumbPage>{label}</BreadcrumbPage>
+                      <BreadcrumbPage>{breadcrumb.label}</BreadcrumbPage>
                     ) : (
                       <BreadcrumbLink asChild>
-                        <Link href="/customers">{label}</Link>
+                        <Link href={breadcrumb.href ?? "/dashboard"}>{breadcrumb.label}</Link>
                       </BreadcrumbLink>
                     )}
                   </BreadcrumbItem>

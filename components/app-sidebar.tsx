@@ -68,8 +68,11 @@ const modules = [
     name: "Vehículos",
     url: "/vehicles",
     icon: CarFrontIcon,
-    badge: "Próximo",
-    disabled: true,
+  },
+  {
+    name: "Componentes",
+    url: "/components",
+    icon: WrenchIcon,
   },
   {
     name: "Calendario",

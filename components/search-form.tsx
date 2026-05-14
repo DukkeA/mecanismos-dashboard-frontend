@@ -14,18 +14,39 @@ import {
 } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { useComponentOptionsQuery } from "@/hooks/use-components";
 import { useCustomerSearchQuery } from "@/hooks/use-customers";
-import type { Customer } from "@/lib/customers/types";
+import { useVehicleOptionsQuery } from "@/hooks/use-vehicles";
+import type { ReferenceOption } from "@/lib/vehicles/types";
+
+type SearchResult =
+  | { kind: "customer"; id: string; title: string; description: string; href: string }
+  | { kind: "vehicle"; id: string; title: string; description: string; href: string }
+  | { kind: "component"; id: string; title: string; description: string; href: string };
 
 export function SearchForm({ ...props }: React.ComponentProps<"form">) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const searchQuery = useCustomerSearchQuery({ search: query, limit: 6 });
   const customers = searchQuery.data ?? [];
+  const vehiclesQuery = useVehicleOptionsQuery({ search: query, limit: 4 });
+  const componentsQuery = useComponentOptionsQuery({ search: query, limit: 4 });
+  const results: SearchResult[] = [
+    ...customers.map((customer) => ({
+      kind: "customer" as const,
+      id: customer.id,
+      title: customer.name,
+      description: customer.documentNumber,
+      href: `/customers/${customer.id}`,
+    })),
+    ...toAssetResults("vehicle", vehiclesQuery.data ?? [], "/vehicles"),
+    ...toAssetResults("component", componentsQuery.data ?? [], "/components"),
+  ];
+  const isFetching = searchQuery.isFetching || vehiclesQuery.isFetching || componentsQuery.isFetching;
 
-  function openCustomer(customer: Customer) {
+  function openResult(result: SearchResult) {
     setQuery("");
-    router.push(`/customers/${customer.id}`);
+    router.push(result.href);
   }
 
   return (
@@ -34,13 +55,13 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
         Buscar
       </Label>
       <div className="relative">
-        <Combobox
-          items={customers}
-          itemToStringValue={(customer: Customer) => customer.name}
+          <Combobox
+          items={results}
+          itemToStringValue={(result: SearchResult) => result.title}
           inputValue={query}
           onInputValueChange={setQuery}
-          onValueChange={(customer: Customer | null) => {
-            if (customer) openCustomer(customer);
+          onValueChange={(result: SearchResult | null) => {
+            if (result) openResult(result);
           }}
         >
           <ComboboxInput
@@ -51,7 +72,7 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
             showClear
           >
             <InputGroupAddon>
-              {searchQuery.isFetching ? (
+              {isFetching ? (
                 <Spinner aria-hidden="true" />
               ) : (
                 <SearchIcon aria-hidden="true" />
@@ -61,25 +82,25 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
         </Combobox>
         {query.trim().length >= 2 ? (
           <div className="absolute right-0 left-0 z-50 mt-2 rounded-2xl border bg-popover p-1 text-popover-foreground shadow-2xl sm:w-80">
-            {customers.length ? (
-              customers.map((customer) => (
+            {results.length ? (
+              results.map((result) => (
                 <button
-                  key={customer.id}
+                  key={`${result.kind}-${result.id}`}
                   type="button"
-                  aria-label={`Abrir ${customer.name}`}
+                  aria-label={`Abrir ${result.title}`}
                   className="flex w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-accent"
                   onMouseDown={(event) => {
                     event.preventDefault();
-                    openCustomer(customer);
+                    openResult(result);
                   }}
-                  onClick={() => openCustomer(customer)}
+                  onClick={() => openResult(result)}
                 >
-                  <CustomerSearchResult customer={customer} />
+                  <SearchResultItem result={result} />
                 </button>
               ))
-            ) : !searchQuery.isFetching ? (
+            ) : !isFetching ? (
               <div className="flex flex-col gap-1 px-3 py-2 text-sm text-muted-foreground">
-                <span>No encontramos clientes.</span>
+                <span>No encontramos resultados.</span>
                 <Link href="/customers" className="font-medium text-foreground underline">
                   Ir a clientes
                 </Link>
@@ -92,13 +113,27 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
   );
 }
 
-function CustomerSearchResult({ customer }: { customer: Customer }) {
+function SearchResultItem({ result }: { result: SearchResult }) {
   return (
     <span className="flex min-w-0 flex-col">
-      <span className="truncate font-medium">{customer.name}</span>
+      <span className="truncate font-medium">{result.title}</span>
       <span className="truncate text-xs text-muted-foreground">
-        {customer.documentNumber}
+        {result.kind === "customer" ? "Cliente" : result.kind === "vehicle" ? "Vehículo" : "Componente"} · {result.description}
       </span>
     </span>
   );
+}
+
+function toAssetResults(
+  kind: "vehicle" | "component",
+  options: ReferenceOption[],
+  baseHref: string,
+): SearchResult[] {
+  return options.map((option) => ({
+    kind,
+    id: option.id,
+    title: option.label,
+    description: option.description ?? "Sin descripción",
+    href: `${baseHref}/${option.id}`,
+  }));
 }
