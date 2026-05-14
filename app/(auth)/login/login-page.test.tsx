@@ -41,12 +41,15 @@ describe("login page", () => {
     const { container } = renderWithQuery(<LoginPage />);
 
     expect(screen.getByText("Iniciar sesión")).toBeVisible();
+    expect(
+      screen.getByText("Bienvenido a la app de gestión de Mecanismos Técnicos."),
+    ).toBeVisible();
     expect(screen.getByLabelText("Email")).toHaveAttribute("autocomplete", "email");
     expect(screen.getByLabelText("Contraseña")).toHaveAttribute(
       "autocomplete",
       "current-password",
     );
-    expect(container.querySelector("main")).toHaveClass("sm:px-6", "lg:px-8");
+    expect(container.querySelector("main")).toHaveClass("md:grid", "md:grid-cols-2");
   });
 
   it("blocks invalid input with visible errors and aria-invalid state", async () => {

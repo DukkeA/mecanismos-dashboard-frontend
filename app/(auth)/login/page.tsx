@@ -44,7 +44,9 @@ export default function LoginPage() {
   return (
     <AuthCardShell
       title="Iniciar sesión"
-      description="Usá tu email y contraseña. Las cookies seguras quedan en el navegador; no guardamos tokens en JavaScript."
+      description="Ingresá tu email y contraseña para acceder."
+      headline="Bienvenido a la app de gestión de Mecanismos Técnicos."
+      supportingText="Ingresá tus credenciales para acceder al tablero de trabajo."
     >
       <form className="flex flex-col gap-6" onSubmit={onSubmit} noValidate>
         <FieldGroup>
