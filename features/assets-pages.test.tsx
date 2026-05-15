@@ -87,7 +87,8 @@ describe("asset list and detail pages", () => {
     expect(String(fetchMock.mock.lastCall?.[0])).not.toMatch(/sort(By|Dir)/);
 
     renderWithQuery(<VehiclesTable params={{ page: 1, limit: 10 }} page={{ data: [vehicleRow("v1", "AA123BB", null)], meta: { page: 1, limit: 10, total: 1, totalPages: 1 } }} isPending={false} isError={false} onRetry={vi.fn()} onParamsChange={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Placa: ordenamiento no disponible" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Placa: ordenamiento no disponible" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Placa: ordenamiento no disponible")).toBeVisible();
   });
 
   it("covers vehicle loading, empty, and retryable error states", async () => {
@@ -249,7 +250,8 @@ describe("asset list and detail pages", () => {
     renderWithQuery(<ComponentsPage />);
 
     expect(await screen.findAllByText("ALT-90")).toHaveLength(2);
-    expect(screen.getByRole("button", { name: "Componente: ordenamiento no disponible" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Componente: ordenamiento no disponible" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Componente: ordenamiento no disponible")).toBeVisible();
     await userEvent.type(screen.getByLabelText("Buscar componentes"), "alt");
 
     await waitFor(() => expect(String(fetchMock.mock.lastCall?.[0])).toContain("/components?"));

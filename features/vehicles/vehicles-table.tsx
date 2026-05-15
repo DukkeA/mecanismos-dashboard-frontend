@@ -74,18 +74,16 @@ export function VehiclesTable({ params, page, isPending, isError, onRetry, onPar
 
 function DisabledSortHeader({ label }: { label: string }) {
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="sm"
+    <span
       className="-ml-3"
-      disabled
       aria-label={`${label}: ordenamiento no disponible`}
       title="Ordenamiento pendiente de soporte backend"
     >
-      {label}
-      <ArrowUpDownIcon data-icon="inline-end" aria-hidden="true" />
-    </Button>
+      <span className="inline-flex h-8 items-center gap-1.5 rounded-4xl px-3 text-sm font-medium whitespace-nowrap">
+        {label}
+        <ArrowUpDownIcon className="size-4" aria-hidden="true" />
+      </span>
+    </span>
   );
 }
 
