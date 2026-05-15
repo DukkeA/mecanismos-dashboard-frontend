@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AssetPagination } from "@/features/assets/asset-pagination";
 import { VehicleFormDialog } from "@/features/vehicles/vehicle-form-dialog";
+import { extractPlainTextFromRichText } from "@/lib/rich-text";
 import type { Vehicle, VehicleListParams, VehiclesPage } from "@/lib/vehicles/types";
 
 export function VehiclesTable({ params, page, isPending, isError, onRetry, onParamsChange }: { params: VehicleListParams; page?: VehiclesPage; isPending: boolean; isError: boolean; onRetry: () => void; onParamsChange: (params: VehicleListParams) => void }) {
@@ -72,23 +73,25 @@ export function VehiclesTable({ params, page, isPending, isError, onRetry, onPar
 }
 
 function VehicleRow({ vehicle }: { vehicle: Vehicle }) {
+  const notePreview = extractPlainTextFromRichText(vehicle.notes, 80);
   return (
     <TableRow>
       <TableCell className="font-medium"><Link href={`/vehicles/${vehicle.id}`} className="hover:underline">{vehicle.plate}</Link></TableCell>
       <TableCell>{vehicle.brand}</TableCell>
       <TableCell>{vehicle.modelReference}</TableCell>
-      <TableCell>{vehicle.notes ?? "—"}</TableCell>
+      <TableCell>{notePreview || "—"}</TableCell>
       <TableCell className="text-right"><VehicleActions vehicle={vehicle} /></TableCell>
     </TableRow>
   );
 }
 
 function VehicleMobileCard({ vehicle }: { vehicle: Vehicle }) {
+  const notePreview = extractPlainTextFromRichText(vehicle.notes, 120);
   return (
     <div className="rounded-2xl border p-4">
       <Link href={`/vehicles/${vehicle.id}`} className="font-medium hover:underline">{vehicle.plate}</Link>
       <p className="text-sm text-muted-foreground">{vehicle.brand} · {vehicle.modelReference}</p>
-      <p className="mt-2 text-sm text-muted-foreground">{vehicle.notes ?? "Sin notas"}</p>
+      <p className="mt-2 text-sm text-muted-foreground">{notePreview || "Sin notas"}</p>
       <div className="mt-4 flex gap-2">
         <Button asChild variant="outline" size="sm"><Link href={`/vehicles/${vehicle.id}`}>Ver detalle</Link></Button>
         <VehicleFormDialog vehicle={vehicle} trigger={<Button type="button" variant="ghost" size="sm">Editar</Button>} />

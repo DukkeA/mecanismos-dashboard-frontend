@@ -1,4 +1,5 @@
 import type { PaginationMeta } from "@/lib/customers/types";
+import { normalizeRichTextNote, type RichTextNote } from "@/lib/rich-text";
 
 export type ReferenceOption<Context = Record<string, unknown>> = {
   id: string;
@@ -13,7 +14,7 @@ export type VehicleDto = {
   brand?: string | null;
   modelReference?: string | null;
   plate?: string | null;
-  notes?: string | null;
+  notes?: RichTextNote | string;
   createdAt?: string | null;
   updatedAt?: string | null;
 };
@@ -24,7 +25,7 @@ export type Vehicle = {
   brand: string;
   modelReference: string;
   plate: string;
-  notes: string | null;
+  notes: RichTextNote;
   createdAt: string | null;
   updatedAt: string | null;
 };
@@ -34,7 +35,7 @@ export type VehicleFormPayload = {
   brand: string;
   modelReference: string;
   plate: string;
-  notes?: string;
+  notes?: RichTextNote;
 };
 
 export type VehicleUpdatePayload = Omit<VehicleFormPayload, "customerId">;
@@ -84,7 +85,7 @@ export function mapVehicle(dto: VehicleDto): Vehicle {
     brand: dto.brand?.trim() || "Sin marca",
     modelReference: dto.modelReference?.trim() || "Sin modelo",
     plate: dto.plate?.trim() || "Sin patente",
-    notes: dto.notes?.trim() || null,
+    notes: normalizeRichTextNote(dto.notes),
     createdAt: dto.createdAt || null,
     updatedAt: dto.updatedAt || null,
   };

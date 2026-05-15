@@ -37,6 +37,7 @@ import type {
   CustomersPage,
   CustomerSortField,
 } from "@/lib/customers/types";
+import { extractPlainTextFromRichText } from "@/lib/rich-text";
 
 export function CustomersTable({
   params,
@@ -153,6 +154,7 @@ export function CustomersTable({
 }
 
 function MobileCustomerCard({ customer }: { customer: Customer }) {
+  const notePreview = extractPlainTextFromRichText(customer.notes, 100);
   return (
     <div className="rounded-2xl border p-4">
       <div className="flex items-start justify-between gap-3">
@@ -167,6 +169,7 @@ function MobileCustomerCard({ customer }: { customer: Customer }) {
       <div className="mt-3 grid gap-1 text-sm text-muted-foreground">
         <span>{customer.email ?? "Sin email"}</span>
         <span>{customer.phone ?? "Sin teléfono"}</span>
+        {notePreview ? <span>{notePreview}</span> : null}
       </div>
       <div className="mt-4 flex gap-2">
         <Button asChild variant="outline" size="sm">

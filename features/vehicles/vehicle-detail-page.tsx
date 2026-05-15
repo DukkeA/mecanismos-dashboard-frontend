@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AlertCircleIcon } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { RichTextViewer } from "@/components/rich-text/rich-text-viewer";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,7 +45,7 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-2">
           <Info label="Cliente" value={vehicle.customerId} href={`/customers/${vehicle.customerId}`} />
-          <Info label="Notas" value={vehicle.notes ?? "Sin notas"} />
+          <NoteInfo label="Notas" value={vehicle.notes} />
           <Info label="Creado" value={formatDate(vehicle.createdAt)} />
           <Info label="Actualizado" value={formatDate(vehicle.updatedAt)} />
         </CardContent>
@@ -55,6 +56,10 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
 
 function Info({ label, value, href }: { label: string; value: string; href?: string }) {
   return <div className="rounded-xl bg-muted/40 p-3"><p className="text-xs text-muted-foreground">{label}</p>{href ? <Link href={href} className="font-medium underline-offset-4 hover:underline">{value}</Link> : <p className="font-medium">{value}</p>}</div>;
+}
+
+function NoteInfo({ label, value }: { label: string; value: Vehicle["notes"] }) {
+  return <div className="rounded-xl bg-muted/40 p-3 md:col-span-2"><p className="text-xs text-muted-foreground">{label}</p><RichTextViewer value={value} className="mt-1" /></div>;
 }
 
 function formatDate(value: string | null) {

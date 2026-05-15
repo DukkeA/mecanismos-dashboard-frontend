@@ -18,6 +18,7 @@ describe("customer validation schemas", () => {
       email: undefined,
       phone: "291 555-0101",
       address: undefined,
+      notes: null,
       status: "active",
     });
   });

@@ -1,6 +1,7 @@
 import type { PaginationMeta } from "@/lib/customers/types";
 import type { ComponentType, ComponentTypeDto } from "@/lib/component-types/types";
 import { mapComponentType } from "@/lib/component-types/types";
+import { normalizeRichTextNote, type RichTextNote } from "@/lib/rich-text";
 import type { ReferenceOption } from "@/lib/vehicles/types";
 
 export type ComponentDto = {
@@ -11,7 +12,7 @@ export type ComponentDto = {
   brand?: string | null;
   reference?: string | null;
   identifier?: string | null;
-  notes?: string | null;
+  notes?: RichTextNote | string;
   createdAt?: string | null;
   updatedAt?: string | null;
   componentType?: ComponentTypeDto | null;
@@ -25,7 +26,7 @@ export type WorkshopComponent = {
   brand: string;
   reference: string;
   identifier: string | null;
-  notes: string | null;
+  notes: RichTextNote;
   createdAt: string | null;
   updatedAt: string | null;
   componentType: ComponentType | null;
@@ -38,7 +39,7 @@ export type ComponentFormPayload = {
   brand: string;
   reference: string;
   identifier?: string;
-  notes?: string;
+  notes?: RichTextNote;
 };
 
 export type ComponentUpdatePayload = Omit<ComponentFormPayload, "customerId">;
@@ -84,7 +85,7 @@ export function mapComponent(dto: ComponentDto): WorkshopComponent {
     brand: dto.brand?.trim() || "Sin marca",
     reference: dto.reference?.trim() || "Sin referencia",
     identifier: dto.identifier?.trim() || null,
-    notes: dto.notes?.trim() || null,
+    notes: normalizeRichTextNote(dto.notes),
     createdAt: dto.createdAt || null,
     updatedAt: dto.updatedAt || null,
     componentType: dto.componentType ? mapComponentType(dto.componentType) : null,

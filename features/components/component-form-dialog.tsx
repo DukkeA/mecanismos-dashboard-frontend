@@ -5,12 +5,12 @@ import { toast } from "sonner";
 import type { z } from "zod";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { RichTextField } from "@/components/rich-text/rich-text-field";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { OptionCombobox } from "@/features/assets/option-combobox";
 import { useComponentTypeOptionsQuery } from "@/hooks/use-component-types";
@@ -103,11 +103,7 @@ export function ComponentFormDialog({ component, trigger, initialCustomerId, ini
               <TextField id="component-reference" label="Referencia" value={values.reference} error={errors.reference} disabled={isPending} onChange={(value) => updateField("reference", value)} />
               <TextField id="component-identifier" label="Identificador" value={values.identifier ?? ""} error={errors.identifier} disabled={isPending} onChange={(value) => updateField("identifier", value)} />
             </div>
-            <Field data-invalid={Boolean(errors.notes)} data-disabled={isPending}>
-              <FieldLabel htmlFor="component-notes">Notas</FieldLabel>
-              <Textarea id="component-notes" value={values.notes ?? ""} disabled={isPending} aria-invalid={Boolean(errors.notes)} onChange={(event) => updateField("notes", event.target.value)} />
-              <FieldError errors={[{ message: errors.notes }]} />
-            </Field>
+            <RichTextField id="component-notes" label="Notas" value={values.notes} error={errors.notes} disabled={isPending} onChange={(value) => updateField("notes", value)} />
           </FieldGroup>
         </form>
         <DialogFooter>
@@ -125,7 +121,7 @@ function TextField({ id, label, value, error, disabled, onChange }: { id: string
 
 function getInitialValues(component?: WorkshopComponent, initialCustomerId?: string, initialVehicleId?: string): ComponentFormInput {
   if (!component) return { ...emptyComponentFormValues, customerId: initialCustomerId ?? "", vehicleId: initialVehicleId };
-  return { customerId: component.customerId, componentTypeId: component.componentTypeId, vehicleId: component.vehicleId ?? undefined, brand: component.brand, reference: component.reference, identifier: component.identifier ?? "", notes: component.notes ?? "" };
+  return { customerId: component.customerId, componentTypeId: component.componentTypeId, vehicleId: component.vehicleId ?? undefined, brand: component.brand, reference: component.reference, identifier: component.identifier ?? "", notes: component.notes };
 }
 
 function flattenZodErrors(error: z.ZodError<unknown>) {

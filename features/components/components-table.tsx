@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AssetPagination } from "@/features/assets/asset-pagination";
 import { ComponentFormDialog } from "@/features/components/component-form-dialog";
 import type { ComponentListParams, ComponentsPage, WorkshopComponent } from "@/lib/components/types";
+import { extractPlainTextFromRichText } from "@/lib/rich-text";
 
 export function ComponentsTable({ params, page, isPending, isError, onRetry, onParamsChange }: { params: ComponentListParams; page?: ComponentsPage; isPending: boolean; isError: boolean; onRetry: () => void; onParamsChange: (params: ComponentListParams) => void }) {
   const rows = page?.data ?? [];
@@ -32,11 +33,13 @@ export function ComponentsTable({ params, page, isPending, isError, onRetry, onP
 }
 
 function ComponentRow({ component }: { component: WorkshopComponent }) {
-  return <TableRow><TableCell className="font-medium"><Link href={`/components/${component.id}`} className="hover:underline">{displayName(component)}</Link></TableCell><TableCell>{component.componentType?.name ?? "Sin tipo"}</TableCell><TableCell>{component.brand} · {component.reference}</TableCell><TableCell>{component.vehicleId ? <Link href={`/vehicles/${component.vehicleId}`} className="hover:underline">Ver vehículo</Link> : <Badge variant="outline">Sin vehículo</Badge>}</TableCell><TableCell className="text-right"><ComponentActions component={component} /></TableCell></TableRow>;
+  const notePreview = extractPlainTextFromRichText(component.notes, 80);
+  return <TableRow><TableCell className="font-medium"><Link href={`/components/${component.id}`} className="hover:underline">{displayName(component)}</Link>{notePreview ? <p className="text-sm font-normal text-muted-foreground">{notePreview}</p> : null}</TableCell><TableCell>{component.componentType?.name ?? "Sin tipo"}</TableCell><TableCell>{component.brand} · {component.reference}</TableCell><TableCell>{component.vehicleId ? <Link href={`/vehicles/${component.vehicleId}`} className="hover:underline">Ver vehículo</Link> : <Badge variant="outline">Sin vehículo</Badge>}</TableCell><TableCell className="text-right"><ComponentActions component={component} /></TableCell></TableRow>;
 }
 
 function ComponentMobileCard({ component }: { component: WorkshopComponent }) {
-  return <div className="rounded-2xl border p-4"><Link href={`/components/${component.id}`} className="font-medium hover:underline">{displayName(component)}</Link><p className="text-sm text-muted-foreground">{component.componentType?.name ?? "Sin tipo"} · {component.brand} · {component.reference}</p><p className="mt-2 text-sm text-muted-foreground">{component.vehicleId ? "Vinculado a vehículo" : "Sin vehículo vinculado"}</p><div className="mt-4 flex gap-2"><Button asChild variant="outline" size="sm"><Link href={`/components/${component.id}`}>Ver detalle</Link></Button><ComponentFormDialog component={component} trigger={<Button type="button" variant="ghost" size="sm">Editar</Button>} /></div></div>;
+  const notePreview = extractPlainTextFromRichText(component.notes, 120);
+  return <div className="rounded-2xl border p-4"><Link href={`/components/${component.id}`} className="font-medium hover:underline">{displayName(component)}</Link><p className="text-sm text-muted-foreground">{component.componentType?.name ?? "Sin tipo"} · {component.brand} · {component.reference}</p><p className="mt-2 text-sm text-muted-foreground">{component.vehicleId ? "Vinculado a vehículo" : "Sin vehículo vinculado"}</p><p className="mt-1 text-sm text-muted-foreground">{notePreview || "Sin notas"}</p><div className="mt-4 flex gap-2"><Button asChild variant="outline" size="sm"><Link href={`/components/${component.id}`}>Ver detalle</Link></Button><ComponentFormDialog component={component} trigger={<Button type="button" variant="ghost" size="sm">Editar</Button>} /></div></div>;
 }
 
 export function ComponentActions({ component }: { component: WorkshopComponent }) {

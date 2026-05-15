@@ -1,10 +1,6 @@
 import { z } from "zod";
 
-const optionalText = z
-  .string()
-  .trim()
-  .optional()
-  .transform((value) => value || undefined);
+import { richTextNoteSchema } from "@/lib/rich-text";
 
 export const vehicleFormSchema = z.object({
   customerId: z.string().trim().min(1, "Seleccioná un cliente."),
@@ -15,20 +11,20 @@ export const vehicleFormSchema = z.object({
     .trim()
     .min(3, "Ingresá una patente válida.")
     .transform((value) => value.toUpperCase()),
-  notes: optionalText,
+  notes: richTextNoteSchema.optional().default(null),
 });
 
 export const vehicleCreateSchema = vehicleFormSchema;
 export const vehicleUpdateSchema = vehicleFormSchema.omit({ customerId: true });
 
-export type VehicleFormInput = z.input<typeof vehicleFormSchema>;
+export type VehicleFormInput = z.output<typeof vehicleFormSchema>;
 export type VehicleFormOutput = z.output<typeof vehicleFormSchema>;
-export type VehicleUpdateInput = z.input<typeof vehicleUpdateSchema>;
+export type VehicleUpdateInput = z.output<typeof vehicleUpdateSchema>;
 
 export const emptyVehicleFormValues: VehicleFormInput = {
   customerId: "",
   brand: "",
   modelReference: "",
   plate: "",
-  notes: "",
+  notes: null,
 };

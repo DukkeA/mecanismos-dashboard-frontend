@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { richTextNoteSchema } from "@/lib/rich-text";
+
 const optionalText = z
   .string()
   .trim()
@@ -22,15 +24,15 @@ export const componentFormSchema = z.object({
   brand: z.string().trim().min(2, "Ingresá la marca."),
   reference: z.string().trim().min(2, "Ingresá la referencia."),
   identifier: optionalText,
-  notes: optionalText,
+  notes: richTextNoteSchema.optional().default(null),
 });
 
 export const componentCreateSchema = componentFormSchema;
 export const componentUpdateSchema = componentFormSchema.omit({ customerId: true });
 
-export type ComponentFormInput = z.input<typeof componentFormSchema>;
+export type ComponentFormInput = z.output<typeof componentFormSchema>;
 export type ComponentFormOutput = z.output<typeof componentFormSchema>;
-export type ComponentUpdateInput = z.input<typeof componentUpdateSchema>;
+export type ComponentUpdateInput = z.output<typeof componentUpdateSchema>;
 
 export const emptyComponentFormValues: ComponentFormInput = {
   customerId: "",
@@ -39,5 +41,5 @@ export const emptyComponentFormValues: ComponentFormInput = {
   brand: "",
   reference: "",
   identifier: "",
-  notes: "",
+  notes: null,
 };

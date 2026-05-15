@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import type { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import { RichTextField } from "@/components/rich-text/rich-text-field";
 import {
   Dialog,
   DialogContent,
@@ -170,6 +171,7 @@ export function CustomerFormDialog({ customer, trigger }: Props) {
                 <FieldError errors={[{ message: errors.status }]} />
               </Field>
             </div>
+            <RichTextField id="customer-notes" label="Notas" value={values.notes} error={errors.notes} disabled={isPending} onChange={(value) => updateField("notes", value)} />
           </FieldGroup>
         </form>
         <DialogFooter>
@@ -233,6 +235,7 @@ function getInitialValues(customer?: Customer): CustomerFormInput {
     email: customer.email ?? "",
     phone: customer.phone ?? "",
     address: customer.address ?? "",
+    notes: customer.notes,
     status: customer.status,
   };
 }

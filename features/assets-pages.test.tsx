@@ -11,8 +11,11 @@ import { ComponentsPage } from "@/features/components/components-page";
 import { ComponentsTable } from "@/features/components/components-table";
 import { VehicleFormDialog } from "@/features/vehicles/vehicle-form-dialog";
 import { VehicleDetailPage } from "@/features/vehicles/vehicle-detail-page";
+import { VehiclesTable } from "@/features/vehicles/vehicles-table";
 import { VehiclesPage } from "@/features/vehicles/vehicles-page";
 import type { WorkshopComponent } from "@/lib/components/types";
+import type { Vehicle } from "@/lib/vehicles/types";
+import { legacyStringToRichTextNote } from "@/lib/rich-text";
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -125,13 +128,14 @@ describe("asset list and detail pages", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        Response.json({ id: "v1", customerId: "c1", plate: "AA123BB", brand: "Volvo", modelReference: "FH" }),
+        Response.json({ id: "v1", customerId: "c1", plate: "AA123BB", brand: "Volvo", modelReference: "FH", notes: legacyStringToRichTextNote("Vehicle JSON detail note") }),
       ),
     );
 
     renderWithQuery(<VehicleDetailPage vehicleId="v1" />);
 
     expect(await screen.findByText("AA123BB")).toBeVisible();
+    expect(screen.getByText("Vehicle JSON detail note")).toBeVisible();
     expect(screen.getByRole("link", { name: "c1" })).toHaveAttribute("href", "/customers/c1");
   });
 
@@ -173,6 +177,8 @@ describe("asset list and detail pages", () => {
     fireEvent.submit(document.getElementById("vehicle-form") as HTMLFormElement);
 
     expect(await screen.findByText("No pudimos guardar el vehículo")).toBeVisible();
+    const postCall = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith("/vehicles") && init?.method === "POST");
+    expect(JSON.parse(String(postCall?.[1]?.body))).toMatchObject({ notes: null });
     expect(toast.error).toHaveBeenCalledWith("Revisá los datos del vehículo y volvé a intentar.");
     expect(within(screen.getByRole("dialog")).getByLabelText("Marca")).toHaveValue("Volvo");
     expect(within(screen.getByRole("dialog")).getByLabelText("Modelo / referencia")).toHaveValue("FH");
@@ -278,17 +284,40 @@ describe("asset list and detail pages", () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
+  it("renders vehicle table and mobile previews from JSON, legacy, long, and unknown notes", () => {
+    const longText = "This vehicle note is intentionally long so the compact preview truncates it before it overwhelms the table layout.";
+
+    renderWithQuery(<VehiclesTable params={{ page: 1, limit: 10 }} page={{ data: [vehicleRow("v-json", "AA111AA", legacyStringToRichTextNote("Vehicle JSON preview")), vehicleRow("v-legacy", "BB222BB", "Vehicle legacy preview" as never), vehicleRow("v-long", "CC333CC", legacyStringToRichTextNote(longText)), vehicleRow("v-unknown", "DD444DD", { root: { type: "root", children: [{ type: "unknown", children: [{ type: "text", text: "Vehicle unknown note" }] }] } } as never)], meta: { page: 1, limit: 10, total: 4, totalPages: 1 } }} isPending={false} isError={false} onRetry={vi.fn()} onParamsChange={vi.fn()} />);
+
+    expect(screen.getAllByText("Vehicle JSON preview").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Vehicle legacy preview").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Vehicle unknown note").length).toBeGreaterThan(0);
+    expect(screen.getAllByText((content) => content.startsWith("This vehicle note is intentionally long") && content.endsWith("…")).length).toBeGreaterThan(0);
+  });
+
+  it("renders component table and mobile previews from JSON, legacy, long, and unknown notes", () => {
+    const longText = "This component note is intentionally long so the compact preview truncates it before it overwhelms the table layout.";
+
+    renderWithQuery(<ComponentsTable params={{ page: 1, limit: 10 }} page={{ data: [componentRow("p-json", "ALT-1", legacyStringToRichTextNote("Component JSON preview")), componentRow("p-legacy", "ALT-2", "Component legacy preview" as never), componentRow("p-long", "ALT-3", legacyStringToRichTextNote(longText)), componentRow("p-unknown", "ALT-4", { root: { type: "root", children: [{ type: "unknown", children: [{ type: "text", text: "Component unknown note" }] }] } } as never)], meta: { page: 1, limit: 10, total: 4, totalPages: 1 } }} isPending={false} isError={false} onRetry={vi.fn()} onParamsChange={vi.fn()} />);
+
+    expect(screen.getAllByText("Component JSON preview").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Component legacy preview").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Component unknown note").length).toBeGreaterThan(0);
+    expect(screen.getAllByText((content) => content.startsWith("This component note is intentionally long") && content.endsWith("…")).length).toBeGreaterThan(0);
+  });
+
   it("renders component detail with customer and optional vehicle links", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        Response.json({ id: "p1", customerId: "c1", vehicleId: "v1", componentTypeId: "ct1", brand: "Bosch", reference: "ALT", identifier: "ALT-90", componentType: { id: "ct1", name: "Alternador" } }),
+        Response.json({ id: "p1", customerId: "c1", vehicleId: "v1", componentTypeId: "ct1", brand: "Bosch", reference: "ALT", identifier: "ALT-90", notes: legacyStringToRichTextNote("Component JSON detail note"), componentType: { id: "ct1", name: "Alternador" } }),
       ),
     );
 
     renderWithQuery(<ComponentDetailPage componentId="p1" />);
 
     expect(await screen.findByText("ALT-90")).toBeVisible();
+    expect(screen.getByText("Component JSON detail note")).toBeVisible();
     expect(screen.getByRole("link", { name: "c1" })).toHaveAttribute("href", "/customers/c1");
     expect(screen.getByRole("link", { name: "v1" })).toHaveAttribute("href", "/vehicles/v1");
   });
@@ -327,6 +356,7 @@ describe("asset list and detail pages", () => {
       brand: "Bosch",
       reference: "ALT",
       identifier: "ALT-90",
+      notes: null,
     });
 
     resolveCreate(Response.json(componentResponse));
@@ -349,7 +379,7 @@ describe("asset list and detail pages", () => {
       brand: "Bosch",
       reference: "ALT",
       identifier: "ALT-90",
-      notes: "Original note",
+      notes: { root: { type: "root", children: [{ type: "paragraph", children: [{ type: "text", text: "Original note" }] }] } },
       createdAt: null,
       updatedAt: null,
       componentType: {
@@ -391,12 +421,20 @@ describe("asset list and detail pages", () => {
       brand: "Bosch",
       reference: "ALT",
       identifier: "ALT-90",
-      notes: "Original note",
+      notes: expect.objectContaining({ root: expect.objectContaining({ type: "root" }) }),
     });
     expect(within(screen.getByRole("dialog")).getByLabelText("Marca")).toHaveValue("Bosch");
     expect(within(screen.getByRole("dialog")).getByLabelText("Referencia")).toHaveValue("ALT");
     expect(within(screen.getByRole("dialog")).getByLabelText("Identificador")).toHaveValue("ALT-90");
-    expect(within(screen.getByRole("dialog")).getByLabelText("Notas")).toHaveValue("Original note");
+    expect(within(screen.getByRole("dialog")).getByText("Original note")).toBeVisible();
     expect(toast.error).toHaveBeenCalledWith("Revisá que el vehículo pertenezca al mismo cliente e intentá otra vez.");
   });
 });
+
+function vehicleRow(id: string, plate: string, notes: Vehicle["notes"]): Vehicle {
+  return { id, customerId: "c1", plate, brand: "Volvo", modelReference: "FH", notes, createdAt: null, updatedAt: null };
+}
+
+function componentRow(id: string, identifier: string, notes: WorkshopComponent["notes"]): WorkshopComponent {
+  return { id, customerId: "c1", vehicleId: null, componentTypeId: "ct1", brand: "Bosch", reference: "ALT", identifier, notes, createdAt: null, updatedAt: null, componentType: { id: "ct1", name: "Alternador", slug: "alternador", description: null, isActive: true, createdAt: null, updatedAt: null } };
+}

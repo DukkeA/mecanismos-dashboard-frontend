@@ -5,7 +5,11 @@ import { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CustomersPage } from "@/features/customers/customers-page";
+import { CustomerFormDialog } from "@/features/customers/customer-form-dialog";
+import { CustomersTable } from "@/features/customers/customers-table";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { legacyStringToRichTextNote } from "@/lib/rich-text";
+import type { Customer } from "@/lib/customers/types";
 
 vi.mock("sonner", () => ({
   toast: {
@@ -179,6 +183,62 @@ describe("CustomersPage", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 
+  it("submits customer notes as JSON and clears existing notes as null", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ id: "c1", name: "Cliente con Nota", documentNumber: "31", notes: legacyStringToRichTextNote("Important JSON note") }))
+      .mockResolvedValueOnce(Response.json({ id: "c2", name: "Cliente Existente", documentNumber: "32", notes: null }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const jsonCustomer: Customer = customerRow("c1", "Cliente con Nota", legacyStringToRichTextNote("Important JSON note"));
+    const existingCustomer: Customer = customerRow("c2", "Cliente Existente", legacyStringToRichTextNote("Existing note"));
+    const { unmount } = renderWithProviders(<CustomerFormDialog customer={jsonCustomer} trigger={<button type="button">Editar cliente con nota</button>} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Editar cliente con nota" }));
+    let dialog = await screen.findByRole("dialog");
+
+    fireEvent.submit(document.getElementById("customer-form") as HTMLFormElement);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("https://backend.example.test/customers/c1", expect.objectContaining({ method: "PATCH" })));
+    const jsonPatchCall = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith("/customers/c1") && init?.method === "PATCH");
+    const jsonPatchBody = JSON.parse(String(jsonPatchCall?.[1]?.body));
+    expect(jsonPatchBody.notes).toEqual(expect.objectContaining({ root: expect.objectContaining({ type: "root" }) }));
+    expect(typeof jsonPatchBody.notes).not.toBe("string");
+    unmount();
+
+    renderWithProviders(<CustomerFormDialog customer={existingCustomer} trigger={<button type="button">Editar cliente</button>} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Editar cliente" }));
+    dialog = await screen.findByRole("dialog");
+    const notesEditor = within(dialog).getByRole("textbox", { name: "Notas" });
+    notesEditor.focus();
+    await userEvent.keyboard("{Control>}a{/Control}{Backspace}");
+
+    fireEvent.submit(document.getElementById("customer-form") as HTMLFormElement);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("https://backend.example.test/customers/c2", expect.objectContaining({ method: "PATCH" })));
+    const patchCall = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith("/customers/c2") && init?.method === "PATCH");
+    expect(JSON.parse(String(patchCall?.[1]?.body))).toMatchObject({ notes: null });
+  });
+
+  it("renders customer mobile previews from JSON, legacy, long, and unknown notes", () => {
+    const params = { page: 1, limit: 10, sortBy: "name" as const, sortDir: "asc" as const };
+    const longText = "This customer note is intentionally long so the compact preview truncates it for cards and keeps the mobile layout readable.";
+    const rows: Customer[] = [
+      customerRow("c-json", "JSON Customer", legacyStringToRichTextNote("JSON preview note")),
+      customerRow("c-legacy", "Legacy Customer", legacyStringToRichTextNote("Legacy preview note")),
+      customerRow("c-long", "Long Customer", legacyStringToRichTextNote(longText)),
+      customerRow("c-unknown", "Unknown Customer", { root: { type: "root", children: [{ type: "unknown", children: [{ type: "text", text: "Unknown note text" }] }] } } as Customer["notes"]),
+    ];
+
+    renderWithProviders(<CustomersTable params={params} page={{ data: rows, meta: { page: 1, limit: 10, total: rows.length, totalPages: 1 } }} isPending={false} isError={false} onRetry={vi.fn()} onParamsChange={vi.fn()} />);
+
+    expect(screen.getByText("JSON preview note")).toBeVisible();
+    expect(screen.getByText("Legacy preview note")).toBeVisible();
+    expect(screen.getByText("Unknown note text")).toBeVisible();
+    expect(screen.getByText((content) => content.startsWith("This customer note is intentionally long") && content.endsWith("…"))).toBeVisible();
+  });
+
   it("shows a retryable error state", async () => {
     vi.stubGlobal(
       "fetch",
@@ -190,3 +250,7 @@ describe("CustomersPage", () => {
     expect(await screen.findByText("No pudimos cargar los clientes")).toBeVisible();
   });
 });
+
+function customerRow(id: string, name: string, notes: Customer["notes"]): Customer {
+  return { id, name, documentNumber: "30-1", email: null, phone: null, address: null, notes, status: "active", createdAt: null, updatedAt: null };
+}

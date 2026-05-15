@@ -1,3 +1,5 @@
+import { normalizeRichTextNote, type RichTextNote } from "@/lib/rich-text";
+
 export const CUSTOMER_STATUSES = ["active", "inactive"] as const;
 export const CUSTOMER_SORT_FIELDS = [
   "name",
@@ -19,6 +21,7 @@ export type CustomerDto = {
   email?: string | null;
   phone?: string | null;
   address?: string | null;
+  notes?: RichTextNote | string;
   status?: CustomerStatus | string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
@@ -31,6 +34,7 @@ export type Customer = {
   email: string | null;
   phone: string | null;
   address: string | null;
+  notes: RichTextNote;
   status: CustomerStatus;
   createdAt: string | null;
   updatedAt: string | null;
@@ -42,6 +46,7 @@ export type CustomerFormPayload = {
   email?: string;
   phone?: string;
   address?: string;
+  notes?: RichTextNote;
   status?: CustomerStatus;
 };
 
@@ -91,6 +96,7 @@ const fallbackCustomer: Customer = {
   email: null,
   phone: null,
   address: null,
+  notes: null,
   status: "active",
   createdAt: null,
   updatedAt: null,
@@ -107,6 +113,7 @@ export function mapCustomer(dto: CustomerDto): Customer {
     email: dto.email?.trim() || null,
     phone: dto.phone?.trim() || null,
     address: dto.address?.trim() || null,
+    notes: normalizeRichTextNote(dto.notes),
     status,
     createdAt: dto.createdAt || null,
     updatedAt: dto.updatedAt || null,

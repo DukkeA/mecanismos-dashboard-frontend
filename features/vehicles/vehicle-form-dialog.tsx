@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import type { z } from "zod";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { RichTextField } from "@/components/rich-text/rich-text-field";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,7 +18,6 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { OptionCombobox } from "@/features/assets/option-combobox";
 import {
@@ -144,11 +144,7 @@ export function VehicleFormDialog({
               <TextField id="vehicle-model" label="Modelo / referencia" value={values.modelReference} error={errors.modelReference} disabled={isPending} onChange={(value) => updateField("modelReference", value)} />
               <TextField id="vehicle-plate" label="Patente" value={values.plate} error={errors.plate} disabled={isPending} onChange={(value) => updateField("plate", value)} />
             </div>
-            <Field data-invalid={Boolean(errors.notes)} data-disabled={isPending}>
-              <FieldLabel htmlFor="vehicle-notes">Notas</FieldLabel>
-              <Textarea id="vehicle-notes" value={values.notes ?? ""} disabled={isPending} aria-invalid={Boolean(errors.notes)} onChange={(event) => updateField("notes", event.target.value)} />
-              <FieldError errors={[{ message: errors.notes }]} />
-            </Field>
+            <RichTextField id="vehicle-notes" label="Notas" value={values.notes} error={errors.notes} disabled={isPending} onChange={(value) => updateField("notes", value)} />
           </FieldGroup>
         </form>
         <DialogFooter>
@@ -183,7 +179,7 @@ function getInitialValues(vehicle?: Vehicle, initialCustomerId?: string): Vehicl
     brand: vehicle.brand,
     modelReference: vehicle.modelReference,
     plate: vehicle.plate,
-    notes: vehicle.notes ?? "",
+    notes: vehicle.notes,
   };
 }
 

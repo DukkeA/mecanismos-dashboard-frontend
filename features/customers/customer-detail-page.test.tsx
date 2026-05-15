@@ -5,6 +5,7 @@ import { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CustomerDetailPage } from "@/features/customers/customer-detail-page";
+import { legacyStringToRichTextNote } from "@/lib/rich-text";
 
 vi.mock("sonner", () => ({
   toast: {
@@ -29,10 +30,10 @@ describe("CustomerDetailPage", () => {
   it("renders customer detail and scoped related asset previews", async () => {
     const fetchMock = vi.fn().mockImplementation((url: string) => {
       if (url.includes("/vehicles")) {
-        return Response.json({ data: [{ id: "v1", customerId: "c1", plate: "AA123BB", brand: "Volvo", modelReference: "FH" }], meta: { page: 1, limit: 5, total: 1, totalPages: 1 } });
+        return Response.json({ data: [{ id: "v1", customerId: "c1", plate: "AA123BB", brand: "Volvo", modelReference: "FH", notes: legacyStringToRichTextNote("Vehicle JSON note") }], meta: { page: 1, limit: 5, total: 1, totalPages: 1 } });
       }
       if (url.includes("/components")) {
-        return Response.json({ data: [{ id: "p1", customerId: "c1", componentTypeId: "ct1", brand: "Bosch", reference: "ALT", identifier: "ALT-90", componentType: { id: "ct1", name: "Alternador" } }], meta: { page: 1, limit: 5, total: 1, totalPages: 1 } });
+        return Response.json({ data: [{ id: "p1", customerId: "c1", componentTypeId: "ct1", brand: "Bosch", reference: "ALT", identifier: "ALT-90", notes: legacyStringToRichTextNote("Component JSON note"), componentType: { id: "ct1", name: "Alternador" } }], meta: { page: 1, limit: 5, total: 1, totalPages: 1 } });
       }
       return Response.json({
         id: "c1",
@@ -41,6 +42,7 @@ describe("CustomerDetailPage", () => {
         email: "admin@diesel.test",
         phone: "29155502",
         address: "Ruta 3",
+        notes: legacyStringToRichTextNote("Customer JSON detail note"),
       });
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -50,6 +52,9 @@ describe("CustomerDetailPage", () => {
     expect(await screen.findByText("Diesel Norte")).toBeVisible();
     expect(await screen.findByText("AA123BB")).toBeVisible();
     expect(await screen.findByText("ALT-90")).toBeVisible();
+    expect(screen.getByText("Customer JSON detail note")).toBeVisible();
+    expect(screen.getByText("Vehicle JSON note")).toBeVisible();
+    expect(screen.getByText("Component JSON note")).toBeVisible();
     expect(screen.getByText("Órdenes")).toBeVisible();
     expect(screen.getByText("Historial")).toBeVisible();
     expect(fetchMock.mock.calls.map(([url]) => String(url))).toContain(

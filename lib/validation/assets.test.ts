@@ -18,7 +18,7 @@ describe("asset validation schemas", () => {
       brand: "Volvo",
       modelReference: "FH",
       plate: "AB123CD",
-      notes: undefined,
+      notes: null,
     });
 
     expect(vehicleUpdateSchema.safeParse({ customerId: "c2" }).success).toBe(false);
@@ -40,7 +40,7 @@ describe("asset validation schemas", () => {
       brand: "Bosch",
       reference: "ALT-90",
       identifier: undefined,
-      notes: "ok",
+      notes: expect.objectContaining({ root: expect.objectContaining({ type: "root" }) }),
     });
 
     expect(componentCreateSchema.safeParse({ customerId: "", brand: "A" }).success).toBe(false);

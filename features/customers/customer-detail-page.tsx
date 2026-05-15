@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { RichTextViewer } from "@/components/rich-text/rich-text-viewer";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -34,6 +35,7 @@ import { useCustomerQuery } from "@/hooks/use-customers";
 import { useVehiclesQuery } from "@/hooks/use-vehicles";
 import type { WorkshopComponent } from "@/lib/components/types";
 import type { Customer } from "@/lib/customers/types";
+import { extractPlainTextFromRichText } from "@/lib/rich-text";
 import type { Vehicle } from "@/lib/vehicles/types";
 
 export function CustomerDetailPage({ customerId }: { customerId: string }) {
@@ -90,6 +92,10 @@ function CustomerDetail({ customer }: { customer: Customer }) {
         </CardHeader>
         <CardContent>
           <CustomerStatusBadge status={customer.status} />
+          <div className="mt-4 rounded-xl bg-muted/40 p-3">
+            <p className="text-xs text-muted-foreground">Notas</p>
+            <RichTextViewer value={customer.notes} className="mt-1" />
+          </div>
         </CardContent>
       </Card>
 
@@ -270,11 +276,13 @@ function RelatedCard({
 }
 
 function VehiclePreviewRow({ vehicle }: { vehicle: Vehicle }) {
+  const notePreview = extractPlainTextFromRichText(vehicle.notes, 80);
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/40 p-3">
       <div className="min-w-0">
         <Link href={`/vehicles/${vehicle.id}`} className="truncate font-medium underline-offset-4 hover:underline">{vehicle.plate}</Link>
         <p className="truncate text-sm text-muted-foreground">{vehicle.brand} · {vehicle.modelReference}</p>
+        {notePreview ? <p className="truncate text-sm text-muted-foreground">{notePreview}</p> : null}
       </div>
       <VehicleFormDialog vehicle={vehicle} trigger={<Button type="button" variant="ghost" size="sm">Editar</Button>} />
     </div>
@@ -282,11 +290,13 @@ function VehiclePreviewRow({ vehicle }: { vehicle: Vehicle }) {
 }
 
 function ComponentPreviewRow({ component }: { component: WorkshopComponent }) {
+  const notePreview = extractPlainTextFromRichText(component.notes, 80);
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/40 p-3">
       <div className="min-w-0">
         <Link href={`/components/${component.id}`} className="truncate font-medium underline-offset-4 hover:underline">{displayName(component)}</Link>
         <p className="truncate text-sm text-muted-foreground">{component.componentType?.name ?? "Sin tipo"} · {component.brand}</p>
+        {notePreview ? <p className="truncate text-sm text-muted-foreground">{notePreview}</p> : null}
       </div>
       <ComponentFormDialog component={component} trigger={<Button type="button" variant="ghost" size="sm">Editar</Button>} />
     </div>
