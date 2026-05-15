@@ -10,11 +10,11 @@ describe("customer validation schemas", () => {
         documentNumber: "  30-12345678-9 ",
         email: "  ",
         phone: "  291 555-0101 ",
-        documentType: "CUIT",
+        documentType: "NIT",
       }),
     ).toEqual({
       name: "Transporte Austral",
-      documentType: "CUIT",
+      documentType: "NIT",
       documentNumber: "30-12345678-9",
       email: undefined,
       phone: "291 555-0101",
@@ -27,7 +27,7 @@ describe("customer validation schemas", () => {
     const result = customerUpdateSchema.safeParse({
       name: "A",
       documentNumber: "1",
-      documentType: "CUIT",
+      documentType: "CEDULA",
       email: "bad-email",
       status: "active",
     });
@@ -42,5 +42,12 @@ describe("customer validation schemas", () => {
     expect(result.error?.flatten().fieldErrors.email?.[0]).toBe(
       "Ingresá un email válido.",
     );
+  });
+
+  it("accepts only the backend customer document type enum values", () => {
+    expect(customerCreateSchema.shape.documentType.safeParse("CEDULA").success).toBe(true);
+    expect(customerCreateSchema.shape.documentType.safeParse("NIT").success).toBe(true);
+    expect(customerCreateSchema.shape.documentType.safeParse("CUIT").success).toBe(false);
+    expect(customerCreateSchema.shape.documentType.safeParse("DNI").success).toBe(false);
   });
 });

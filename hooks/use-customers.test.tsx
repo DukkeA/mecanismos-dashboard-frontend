@@ -126,14 +126,14 @@ describe("customer TanStack Query hooks", () => {
     });
     await create.result.current.mutateAsync({
       name: "Nuevo",
-      documentType: "CUIT",
+      documentType: "NIT",
       documentNumber: "31",
       status: "active",
     });
 
     expect(JSON.parse(fetchMock.mock.calls[0][1].body as string)).toEqual({
       name: "Nuevo",
-      documentType: "CUIT",
+      documentType: "NIT",
       documentNumber: "31",
       isActive: true,
     });
@@ -149,12 +149,12 @@ describe("customer TanStack Query hooks", () => {
     await expect(
       update.result.current.mutateAsync({
         id: "c1",
-        input: { name: "Fallido", documentType: "DNI", documentNumber: "30", status: "inactive" },
+        input: { name: "Fallido", documentType: "CEDULA", documentNumber: "30", status: "inactive" },
       }),
     ).rejects.toThrow("No");
 
     const updateBody = JSON.parse(fetchMock.mock.calls[1][1].body as string);
-    expect(updateBody).toMatchObject({ documentType: "DNI", isActive: false });
+    expect(updateBody).toMatchObject({ documentType: "CEDULA", isActive: false });
     expect(updateBody).not.toHaveProperty("status");
     expect(updateBody).not.toHaveProperty("address");
 

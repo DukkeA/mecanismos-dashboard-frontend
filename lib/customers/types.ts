@@ -1,7 +1,7 @@
 import { normalizeRichTextNote, type RichTextNote } from "@/lib/rich-text";
 
 export const CUSTOMER_STATUSES = ["active", "inactive"] as const;
-export const CUSTOMER_DOCUMENT_TYPES = ["DNI", "CUIT", "CUIL"] as const;
+export const CUSTOMER_DOCUMENT_TYPES = ["CEDULA", "NIT"] as const;
 export const CUSTOMER_SORT_FIELDS = [
   "name",
   "documentNumber",
@@ -123,7 +123,7 @@ type BackendListResponse = {
 const fallbackCustomer: Customer = {
   id: "unknown",
   name: "Cliente sin nombre",
-  documentType: "CUIT",
+  documentType: "NIT",
   documentNumber: "Sin documento",
   email: null,
   phone: null,

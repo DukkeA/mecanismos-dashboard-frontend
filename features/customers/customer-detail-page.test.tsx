@@ -38,7 +38,7 @@ describe("CustomerDetailPage", () => {
       return Response.json({
         id: "c1",
         name: "Diesel Norte",
-        documentType: "CUIT",
+        documentType: "NIT",
         documentNumber: "30-2",
         email: "admin@diesel.test",
         phone: "29155502",

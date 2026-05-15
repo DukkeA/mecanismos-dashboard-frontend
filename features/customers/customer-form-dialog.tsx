@@ -118,7 +118,7 @@ export function CustomerFormDialog({ customer, trigger }: Props) {
               />
               <TextField
                 id="customer-document"
-                label="Documento / CUIT"
+                label="Documento / NIT"
                 value={values.documentNumber}
                 error={errors.documentNumber}
                 disabled={isPending}
@@ -127,7 +127,7 @@ export function CustomerFormDialog({ customer, trigger }: Props) {
               <Field data-invalid={Boolean(errors.documentType)} data-disabled={isPending}>
                 <FieldLabel htmlFor="customer-document-type">Tipo de documento</FieldLabel>
                 <Select
-                  value={values.documentType ?? "CUIT"}
+                  value={values.documentType ?? "NIT"}
                   onValueChange={(value) =>
                     updateField("documentType", value as CustomerDocumentType)
                   }
@@ -138,9 +138,8 @@ export function CustomerFormDialog({ customer, trigger }: Props) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="CUIT">CUIT</SelectItem>
-                      <SelectItem value="CUIL">CUIL</SelectItem>
-                      <SelectItem value="DNI">DNI</SelectItem>
+                      <SelectItem value="NIT">NIT</SelectItem>
+                      <SelectItem value="CEDULA">Cédula</SelectItem>
                     </SelectGroup>
                   </SelectContent>
                 </Select>

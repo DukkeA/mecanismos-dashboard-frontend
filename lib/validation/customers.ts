@@ -11,7 +11,7 @@ const optionalText = z
 
 export const customerFormSchema = z.object({
   name: z.string().trim().min(2, "Ingresá el nombre del cliente."),
-  documentType: z.enum(CUSTOMER_DOCUMENT_TYPES).default("CUIT"),
+  documentType: z.enum(CUSTOMER_DOCUMENT_TYPES).default("NIT"),
   documentNumber: z.string().trim().min(3, "Ingresá un documento válido."),
   email: optionalText.pipe(z.email("Ingresá un email válido.").optional()),
   phone: optionalText,
@@ -27,7 +27,7 @@ export type CustomerFormOutput = z.output<typeof customerFormSchema>;
 
 export const emptyCustomerFormValues: CustomerFormInput = {
   name: "",
-  documentType: "CUIT",
+  documentType: "NIT",
   documentNumber: "",
   email: "",
   phone: "",

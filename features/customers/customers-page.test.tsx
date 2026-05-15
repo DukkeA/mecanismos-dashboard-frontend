@@ -47,7 +47,7 @@ describe("CustomersPage", () => {
               documentNumber: "30-1",
               email: "ops@austral.test",
               phone: "29155501",
-              documentType: "CUIT",
+              documentType: "NIT",
               isActive: true,
             },
           ],
@@ -88,7 +88,7 @@ describe("CustomersPage", () => {
             documentNumber: "30-1",
             email: "ops@austral.test",
             phone: "29155501",
-              documentType: "CUIT",
+              documentType: "NIT",
               isActive: true,
           },
         ],
@@ -169,7 +169,7 @@ describe("CustomersPage", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Crear cliente" }));
     const dialog = await screen.findByRole("dialog");
     await userEvent.type(within(dialog).getByLabelText("Nombre o razón social"), "Nuevo Cliente");
-    await userEvent.type(within(dialog).getByLabelText("Documento / CUIT"), "31-9");
+    await userEvent.type(within(dialog).getByLabelText("Documento / NIT"), "31-9");
 
     const form = document.getElementById("customer-form");
     expect(form).not.toBeNull();
@@ -181,7 +181,7 @@ describe("CustomersPage", () => {
     );
     const postCall = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith("/customers") && init?.method === "POST");
     const postBody = JSON.parse(String(postCall?.[1]?.body));
-    expect(postBody).toMatchObject({ documentType: "CUIT", isActive: true });
+    expect(postBody).toMatchObject({ documentType: "NIT", isActive: true });
     expect(postBody).not.toHaveProperty("status");
     expect(postBody).not.toHaveProperty("address");
 
@@ -259,5 +259,5 @@ describe("CustomersPage", () => {
 });
 
 function customerRow(id: string, name: string, notes: Customer["notes"]): Customer {
-  return { id, name, documentType: "CUIT", documentNumber: "30-1", email: null, phone: null, notes, status: "active", createdAt: null, updatedAt: null };
+  return { id, name, documentType: "NIT", documentNumber: "30-1", email: null, phone: null, notes, status: "active", createdAt: null, updatedAt: null };
 }
