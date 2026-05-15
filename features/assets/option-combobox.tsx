@@ -1,5 +1,6 @@
 "use client";
 
+import type { RefObject } from "react";
 import { SearchIcon } from "lucide-react";
 
 import {
@@ -33,6 +34,7 @@ export function OptionCombobox({
   disabled,
   isFetching,
   modal,
+  portalContainer,
   onInputValueChange,
   onValueChange,
 }: {
@@ -48,6 +50,7 @@ export function OptionCombobox({
   disabled?: boolean;
   isFetching?: boolean;
   modal?: boolean;
+  portalContainer?: HTMLElement | null | RefObject<HTMLElement | null>;
   onInputValueChange: (value: string) => void;
   onValueChange: (value: ComboboxOption | null) => void;
 }) {
@@ -85,7 +88,7 @@ export function OptionCombobox({
             )}
           </InputGroupAddon>
         </ComboboxInput>
-        <ComboboxContent>
+        <ComboboxContent container={portalContainer}>
           <ComboboxList>
             {options.map((option) => (
               <ComboboxItem key={option.id} value={option}>

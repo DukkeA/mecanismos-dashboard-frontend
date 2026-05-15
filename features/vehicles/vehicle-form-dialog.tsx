@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { z } from "zod";
 
@@ -54,6 +54,7 @@ export function VehicleFormDialog({
   initialCustomerId?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const dialogContentRef = useRef<HTMLDivElement | null>(null);
   const [values, setValues] = useState<VehicleFormInput>(() =>
     getInitialValues(vehicle, initialCustomerId),
   );
@@ -124,7 +125,7 @@ export function VehicleFormDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent ref={dialogContentRef} className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Editar vehículo" : "Nuevo vehículo"}
@@ -185,6 +186,7 @@ export function VehicleFormDialog({
                 disabled={isPending || Boolean(initialCustomerId)}
                 isFetching={customersQuery.isFetching}
                 modal
+                portalContainer={dialogContentRef}
                 onInputValueChange={setCustomerSearch}
                 onValueChange={(option) =>
                   updateField("customerId", option?.id ?? "")

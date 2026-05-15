@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { z } from "zod";
 
@@ -24,6 +24,7 @@ type FieldErrors = Partial<Record<keyof ComponentFormInput, string>>;
 
 export function ComponentFormDialog({ component, trigger, initialCustomerId, initialVehicleId }: { component?: WorkshopComponent; trigger: React.ReactNode; initialCustomerId?: string; initialVehicleId?: string }) {
   const [open, setOpen] = useState(false);
+  const dialogContentRef = useRef<HTMLDivElement | null>(null);
   const [values, setValues] = useState<ComponentFormInput>(() => getInitialValues(component, initialCustomerId, initialVehicleId));
   const [errors, setErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState<string | null>(null);
@@ -79,7 +80,7 @@ export function ComponentFormDialog({ component, trigger, initialCustomerId, ini
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent ref={dialogContentRef} className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar componente" : "Nuevo componente"}</DialogTitle>
           <DialogDescription>{isEditing ? "Actualizá el componente y su vínculo opcional a vehículo." : "Cargá un componente asociado a un cliente; el vehículo es opcional."}</DialogDescription>
@@ -87,7 +88,7 @@ export function ComponentFormDialog({ component, trigger, initialCustomerId, ini
         <form id="component-form" className="flex flex-col gap-6" onSubmit={handleSubmit}>
           {serverError ? <Alert variant="destructive"><AlertTitle>No pudimos guardar el componente</AlertTitle><AlertDescription>{serverError}</AlertDescription></Alert> : null}
           <FieldGroup className="gap-4">
-            {isEditing ? <Field data-disabled><FieldLabel>Cliente</FieldLabel><p className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">{component?.customerId ?? "Cliente actual"} · no se reasigna desde edición</p></Field> : <OptionCombobox id="component-customer" label="Cliente" value={values.customerId} options={(customersQuery.data ?? []).map((customer) => ({ id: customer.id, label: customer.label, description: customer.description }))} selectedOption={initialCustomerId ? { id: initialCustomerId, label: initialCustomerId, description: "Cliente preseleccionado" } : undefined} inputValue={customerSearch} placeholder="Buscar cliente" emptyText="No encontramos clientes." error={errors.customerId} disabled={isPending || Boolean(initialCustomerId)} isFetching={customersQuery.isFetching} modal onInputValueChange={setCustomerSearch} onValueChange={(option) => { updateField("customerId", option?.id ?? ""); updateField("vehicleId", undefined); }} />}
+            {isEditing ? <Field data-disabled><FieldLabel>Cliente</FieldLabel><p className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">{component?.customerId ?? "Cliente actual"} · no se reasigna desde edición</p></Field> : <OptionCombobox id="component-customer" label="Cliente" value={values.customerId} options={(customersQuery.data ?? []).map((customer) => ({ id: customer.id, label: customer.label, description: customer.description }))} selectedOption={initialCustomerId ? { id: initialCustomerId, label: initialCustomerId, description: "Cliente preseleccionado" } : undefined} inputValue={customerSearch} placeholder="Buscar cliente" emptyText="No encontramos clientes." error={errors.customerId} disabled={isPending || Boolean(initialCustomerId)} isFetching={customersQuery.isFetching} modal portalContainer={dialogContentRef} onInputValueChange={setCustomerSearch} onValueChange={(option) => { updateField("customerId", option?.id ?? ""); updateField("vehicleId", undefined); }} />}
             <Field data-invalid={Boolean(errors.componentTypeId)} data-disabled={isPending}>
               <FieldLabel htmlFor="component-type">Tipo</FieldLabel>
               <Select value={values.componentTypeId} disabled={isPending} onValueChange={(value) => updateField("componentTypeId", value)}>
@@ -96,7 +97,7 @@ export function ComponentFormDialog({ component, trigger, initialCustomerId, ini
               </Select>
               <FieldError errors={[{ message: errors.componentTypeId }]} />
             </Field>
-            <OptionCombobox id="component-vehicle" label="Vehículo opcional" value={values.vehicleId ?? undefined} options={(vehicleOptionsQuery.data ?? []).map((option) => ({ id: option.id, label: option.label, description: option.description }))} inputValue={vehicleSearch} placeholder="Buscar vehículo o dejar vacío" emptyText="No encontramos vehículos para este cliente." error={errors.vehicleId} disabled={isPending || !values.customerId} isFetching={vehicleOptionsQuery.isFetching} modal onInputValueChange={setVehicleSearch} onValueChange={(option) => updateField("vehicleId", option?.id ?? (component ? null : undefined))} />
+            <OptionCombobox id="component-vehicle" label="Vehículo opcional" value={values.vehicleId ?? undefined} options={(vehicleOptionsQuery.data ?? []).map((option) => ({ id: option.id, label: option.label, description: option.description }))} inputValue={vehicleSearch} placeholder="Buscar vehículo o dejar vacío" emptyText="No encontramos vehículos para este cliente." error={errors.vehicleId} disabled={isPending || !values.customerId} isFetching={vehicleOptionsQuery.isFetching} modal portalContainer={dialogContentRef} onInputValueChange={setVehicleSearch} onValueChange={(option) => updateField("vehicleId", option?.id ?? (component ? null : undefined))} />
             {component?.vehicleId ? <Button type="button" variant="outline" className="w-fit" disabled={isPending} onClick={() => updateField("vehicleId", null)}>Quitar vínculo con vehículo</Button> : null}
             <div className="grid gap-4 md:grid-cols-2">
               <TextField id="component-brand" label="Marca" value={values.brand} error={errors.brand} disabled={isPending} onChange={(value) => updateField("brand", value)} />

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 const comboboxMock = vi.hoisted(() => ({
   rootProps: [] as Array<Record<string, unknown>>,
+  contentProps: [] as Array<Record<string, unknown>>,
 }));
 
 vi.mock("@/components/ui/combobox", () => ({
@@ -11,9 +12,10 @@ vi.mock("@/components/ui/combobox", () => ({
     comboboxMock.rootProps.push(props);
     return <div data-testid="combobox-root">{children}</div>;
   },
-  ComboboxContent: ({ children }: { children: ReactNode }) => (
-    <div>{children}</div>
-  ),
+  ComboboxContent: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) => {
+    comboboxMock.contentProps.push(props);
+    return <div>{children}</div>;
+  },
   ComboboxEmpty: ({ children }: { children: ReactNode }) => (
     <div>{children}</div>
   ),
@@ -37,6 +39,16 @@ describe("OptionCombobox", () => {
     expect(comboboxMock.rootProps.at(-1)).toMatchObject({ modal: true });
   });
 
+  it("passes a portal container to render modal popups inside dialog content", () => {
+    const portalContainer = { current: document.createElement("div") };
+
+    renderOptionCombobox({ modal: true, portalContainer });
+
+    expect(comboboxMock.contentProps.at(-1)).toMatchObject({
+      container: portalContainer,
+    });
+  });
+
   it("leaves non-modal combobox usage unchanged by default", () => {
     renderOptionCombobox();
 
@@ -58,6 +70,7 @@ function renderOptionCombobox(
   props: Partial<ComponentProps<typeof OptionCombobox>> = {},
 ) {
   comboboxMock.rootProps = [];
+  comboboxMock.contentProps = [];
 
   return render(
     <OptionCombobox
