@@ -12,12 +12,16 @@ import { backendFetch } from "@/lib/api/backend";
 import { BackendRequestError } from "@/lib/api/errors";
 import {
   buildCustomerListSearchParams,
+  buildCustomerOptionsSearchParams,
   mapCustomer,
+  mapCustomerOptions,
   mapCustomersPage,
+  toCustomerDto,
   type Customer,
   type CustomerDto,
   type CustomerFormPayload,
   type CustomerListParams,
+  type CustomerOptionsParams,
   type CustomersPage,
   type CustomerSearchParams,
 } from "@/lib/customers/types";
@@ -32,6 +36,9 @@ export const customersQueryKeys = {
   searches: () => [...customersQueryKeys.all, "search"] as const,
   search: (params: CustomerSearchParams) =>
     [...customersQueryKeys.searches(), params] as const,
+  options: () => [...customersQueryKeys.all, "options"] as const,
+  optionList: (params: CustomerOptionsParams) =>
+    [...customersQueryKeys.options(), params] as const,
 };
 
 export { BackendRequestError as CustomerClientError };
@@ -68,33 +75,47 @@ export function useCustomerQuery(id: string) {
 
 export function useCustomerSearchQuery(params: CustomerSearchParams) {
   const trimmed = params.search.trim();
-  const listParams: CustomerListParams = {
-    page: 1,
-    limit: params.limit ?? 6,
-    search: trimmed,
-    sortBy: params.sortBy ?? "name",
-    sortDir: params.sortDir ?? "asc",
-  };
+  const normalized = { ...params, search: trimmed, limit: params.limit ?? 6 };
 
   return useQuery({
-    queryKey: customersQueryKeys.search({
-      search: trimmed,
-      limit: listParams.limit,
-      sortBy: listParams.sortBy,
-      sortDir: listParams.sortDir,
-    }),
+    queryKey: customersQueryKeys.search(normalized),
     queryFn: async () => {
-      const query = buildCustomerListSearchParams(listParams);
-      const response = await backendFetch<unknown>(`/customers?${query}`, {
+      const query = buildCustomerOptionsSearchParams(normalized);
+      const response = await backendFetch<unknown>(`/customers/options${query ? `?${query}` : ""}`, {
         refreshOnUnauthorized: true,
       });
 
-      return mapCustomersPage(
-        response as Parameters<typeof mapCustomersPage>[0],
-        listParams,
-      ).data;
+      return mapCustomerOptions(response as Parameters<typeof mapCustomerOptions>[0]).map(
+        (option) =>
+          mapCustomer({
+            id: option.id,
+            name: option.label,
+            documentNumber: option.description ?? undefined,
+            documentType: option.context?.documentType,
+          }),
+      );
     },
     enabled: trimmed.length >= 2,
+    staleTime: 30_000,
+    retryOnMount: false,
+  });
+}
+
+export function useCustomerOptionsQuery(params: CustomerOptionsParams = {}) {
+  const trimmed = params.search?.trim() ?? "";
+  const normalized = { ...params, search: trimmed, limit: params.limit ?? 10 };
+
+  return useQuery({
+    queryKey: customersQueryKeys.optionList(normalized),
+    queryFn: async () => {
+      const query = buildCustomerOptionsSearchParams(normalized);
+      const response = await backendFetch<unknown>(`/customers/options${query ? `?${query}` : ""}`, {
+        refreshOnUnauthorized: true,
+      });
+
+      return mapCustomerOptions(response as Parameters<typeof mapCustomerOptions>[0]);
+    },
+    enabled: params.enabled !== false && (trimmed.length === 0 || trimmed.length >= 2),
     staleTime: 30_000,
     retryOnMount: false,
   });
@@ -107,8 +128,8 @@ export function useCreateCustomerMutation() {
     mutationFn: async (input: CustomerFormPayload) =>
       mapCustomer(
         await backendFetch<CustomerDto>("/customers", {
-          method: "POST",
-          body: JSON.stringify(input),
+           method: "POST",
+          body: JSON.stringify(toCustomerDto(input)),
           refreshOnUnauthorized: true,
         }),
       ),
@@ -129,8 +150,8 @@ export function useUpdateCustomerMutation() {
     mutationFn: async ({ id, input }: { id: string; input: CustomerFormPayload }) =>
       mapCustomer(
         await backendFetch<CustomerDto>(`/customers/${id}`, {
-          method: "PATCH",
-          body: JSON.stringify(input),
+           method: "PATCH",
+          body: JSON.stringify(toCustomerDto(input)),
           refreshOnUnauthorized: true,
         }),
       ),
@@ -152,6 +173,7 @@ async function invalidateCustomerData(
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: customersQueryKeys.lists() }),
     queryClient.invalidateQueries({ queryKey: customersQueryKeys.searches() }),
+    queryClient.invalidateQueries({ queryKey: customersQueryKeys.options() }),
     customer
       ? queryClient.invalidateQueries({ queryKey: customersQueryKeys.detail(customer.id) })
       : queryClient.invalidateQueries({ queryKey: customersQueryKeys.details() }),

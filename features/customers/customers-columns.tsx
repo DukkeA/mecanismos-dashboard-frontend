@@ -20,7 +20,7 @@ import { CustomerFormDialog } from "@/features/customers/customer-form-dialog";
 import type { Customer, CustomerSortField, SortDirection } from "@/lib/customers/types";
 
 export type CustomerColumn = {
-  key: CustomerSortField | "actions";
+  key: CustomerSortField | "status" | "actions";
   label: string;
   hideOnMobile?: boolean;
   sortable?: boolean;
@@ -31,7 +31,7 @@ export const customerColumns: CustomerColumn[] = [
   { key: "documentNumber", label: "Documento", sortable: true, hideOnMobile: true },
   { key: "email", label: "Email", sortable: true, hideOnMobile: true },
   { key: "phone", label: "Teléfono", sortable: true, hideOnMobile: true },
-  { key: "status", label: "Estado", sortable: true },
+  { key: "status", label: "Estado" },
   { key: "actions", label: "Acciones" },
 ];
 

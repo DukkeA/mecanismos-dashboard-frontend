@@ -21,7 +21,7 @@ export function VehiclesToolbar({
         <Label htmlFor="vehicles-search" className="sr-only">Buscar vehículos</Label>
         <InputGroup className="h-9 bg-background">
           <InputGroupAddon><SearchIcon aria-hidden="true" /></InputGroupAddon>
-          <InputGroupInput id="vehicles-search" type="search" value={params.search ?? ""} placeholder="Buscar por patente, marca o modelo" onChange={(event) => onParamsChange({ ...params, search: event.target.value, page: 1 })} />
+          <InputGroupInput id="vehicles-search" type="search" value={params.search ?? ""} placeholder="Buscar por placa, marca o modelo" onChange={(event) => onParamsChange({ ...params, search: event.target.value, page: 1 })} />
         </InputGroup>
       </form>
       <VehicleFormDialog trigger={<Button type="button">Nuevo vehículo</Button>} />

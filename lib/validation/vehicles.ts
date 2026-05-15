@@ -9,7 +9,7 @@ export const vehicleFormSchema = z.object({
   plate: z
     .string()
     .trim()
-    .min(3, "Ingresá una patente válida.")
+    .min(3, "Ingresá una placa válida.")
     .transform((value) => value.toUpperCase()),
   notes: richTextNoteSchema.optional().default(null),
 });

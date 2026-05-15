@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useComponentTypeOptionsQuery } from "@/hooks/use-component-types";
 import { componentsQueryKeys, useComponentsQuery, useUpdateComponentMutation } from "@/hooks/use-components";
-import { useCreateVehicleMutation, useVehicleOptionsQuery, useVehiclesQuery, vehiclesQueryKeys } from "@/hooks/use-vehicles";
+import { useCreateVehicleMutation, useUpdateVehicleMutation, useVehicleOptionsQuery, useVehiclesQuery, vehiclesQueryKeys } from "@/hooks/use-vehicles";
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -55,6 +55,7 @@ describe("asset TanStack Query hooks", () => {
     const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(Response.json({ id: "v1", customerId: "c1", plate: "AA1", brand: "Volvo", modelReference: "FH" }))
+      .mockResolvedValueOnce(Response.json({ id: "v1", customerId: "c1", plate: "AA2", brand: "Volvo", modelReference: "FM" }))
       .mockResolvedValueOnce(Response.json({ id: "p1", customerId: "c1", vehicleId: null, componentTypeId: "ct1", brand: "Bosch", reference: "ALT", componentType: { id: "ct1", name: "Alternador" } }));
     vi.stubGlobal("fetch", fetchMock);
 
@@ -63,9 +64,17 @@ describe("asset TanStack Query hooks", () => {
     expect(toast.success).toHaveBeenCalledWith("Vehículo creado.");
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: vehiclesQueryKeys.lists() });
 
+    const updateVehicle = renderHook(() => useUpdateVehicleMutation(), { wrapper: createWrapper(queryClient) });
+    await updateVehicle.result.current.mutateAsync({ id: "v1", input: { brand: "Volvo", modelReference: "FM", plate: "AA2" } });
+    const vehiclePatchBody = JSON.parse(fetchMock.mock.calls[1][1].body as string);
+    expect(vehiclePatchBody).toMatchObject({ brand: "Volvo", modelReference: "FM", plate: "AA2" });
+    expect(vehiclePatchBody).not.toHaveProperty("customerId");
+
     const updateComponent = renderHook(() => useUpdateComponentMutation(), { wrapper: createWrapper(queryClient) });
     await updateComponent.result.current.mutateAsync({ id: "p1", input: { componentTypeId: "ct1", vehicleId: null, brand: "Bosch", reference: "ALT" } });
-    expect(JSON.parse(fetchMock.mock.calls[1][1].body as string)).toMatchObject({ vehicleId: null });
+    const componentPatchBody = JSON.parse(fetchMock.mock.calls[2][1].body as string);
+    expect(componentPatchBody).toMatchObject({ vehicleId: null });
+    expect(componentPatchBody).not.toHaveProperty("customerId");
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: componentsQueryKeys.lists() });
   });
 });

@@ -38,10 +38,10 @@ describe("CustomerDetailPage", () => {
       return Response.json({
         id: "c1",
         name: "Diesel Norte",
+        documentType: "CUIT",
         documentNumber: "30-2",
         email: "admin@diesel.test",
         phone: "29155502",
-        address: "Ruta 3",
         notes: legacyStringToRichTextNote("Customer JSON detail note"),
       });
     });

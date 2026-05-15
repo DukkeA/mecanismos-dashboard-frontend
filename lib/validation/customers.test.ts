@@ -10,14 +10,14 @@ describe("customer validation schemas", () => {
         documentNumber: "  30-12345678-9 ",
         email: "  ",
         phone: "  291 555-0101 ",
-        address: " ",
+        documentType: "CUIT",
       }),
     ).toEqual({
       name: "Transporte Austral",
+      documentType: "CUIT",
       documentNumber: "30-12345678-9",
       email: undefined,
       phone: "291 555-0101",
-      address: undefined,
       notes: null,
       status: "active",
     });
@@ -27,6 +27,7 @@ describe("customer validation schemas", () => {
     const result = customerUpdateSchema.safeParse({
       name: "A",
       documentNumber: "1",
+      documentType: "CUIT",
       email: "bad-email",
       status: "active",
     });

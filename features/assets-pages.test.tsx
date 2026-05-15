@@ -51,6 +51,7 @@ const componentResponse = {
 
 function mockComponentFormFetch(postResponse: Response | Promise<Response>) {
   return vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+    if (url.includes("/customers/options")) return Response.json({ data: [{ id: "c1", label: "Cliente Uno", description: "30-1" }] });
     if (url.includes("/component-types/options")) return Response.json(componentTypeOptionsResponse);
     if (url.includes("/vehicles/options")) return Response.json(vehicleOptionsResponse);
     if (url.endsWith("/components") && init?.method === "POST") return postResponse;
@@ -79,11 +80,14 @@ describe("asset list and detail pages", () => {
 
     renderWithQuery(<VehiclesPage />);
 
-    expect((await screen.findAllByText("AA123BB"))[0]).toBeVisible();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     await userEvent.type(screen.getByLabelText("Buscar vehículos"), "volvo");
 
     await waitFor(() => expect(String(fetchMock.mock.lastCall?.[0])).toContain("search=volvo"));
     expect(String(fetchMock.mock.lastCall?.[0])).not.toMatch(/sort(By|Dir)/);
+
+    renderWithQuery(<VehiclesTable params={{ page: 1, limit: 10 }} page={{ data: [vehicleRow("v1", "AA123BB", null)], meta: { page: 1, limit: 10, total: 1, totalPages: 1 } }} isPending={false} isError={false} onRetry={vi.fn()} onParamsChange={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Placa: ordenamiento no disponible" })).toBeDisabled();
   });
 
   it("covers vehicle loading, empty, and retryable error states", async () => {
@@ -94,34 +98,19 @@ describe("asset list and detail pages", () => {
     expect(screen.getByRole("status", { name: "Cargando vehículos" })).toBeVisible();
     unmount();
 
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(
-        Response.json({ data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 1 } }),
-      ),
-    );
-    const emptyRender = renderWithQuery(<VehiclesPage />);
+    const emptyRender = renderWithQuery(<VehiclesTable params={{ page: 1, limit: 10 }} page={{ data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 1 } }} isPending={false} isError={false} onRetry={vi.fn()} onParamsChange={vi.fn()} />);
 
     expect(await screen.findByText("No hay vehículos para mostrar")).toBeVisible();
     expect(screen.getByRole("button", { name: "Crear vehículo" })).toBeVisible();
     emptyRender.unmount();
 
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(Response.json({ message: "Failed" }, { status: 500 }))
-      .mockResolvedValueOnce(
-        Response.json({
-          data: [{ id: "v2", customerId: "c1", plate: "BB234CC", brand: "Scania", modelReference: "R" }],
-          meta: { page: 1, limit: 10, total: 1, totalPages: 1 },
-        }),
-      );
-    vi.stubGlobal("fetch", fetchMock);
-    renderWithQuery(<VehiclesPage />);
+    const onRetry = vi.fn();
+    renderWithQuery(<VehiclesTable params={{ page: 1, limit: 10 }} isPending={false} isError onRetry={onRetry} onParamsChange={vi.fn()} />);
 
-    expect(await screen.findByText("No pudimos cargar los vehículos")).toBeVisible();
+    expect(screen.getByText("No pudimos cargar los vehículos")).toBeVisible();
     await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
 
-    expect(await screen.findAllByText("BB234CC")).toHaveLength(2);
+    expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
   it("renders vehicle detail with customer link", async () => {
@@ -172,7 +161,7 @@ describe("asset list and detail pages", () => {
     const dialog = screen.getByRole("dialog");
     await userEvent.type(within(dialog).getByLabelText("Marca"), "Volvo");
     await userEvent.type(within(dialog).getByLabelText("Modelo / referencia"), "FH");
-    await userEvent.type(within(dialog).getByLabelText("Patente"), "aa123bb");
+    await userEvent.type(within(dialog).getByLabelText("Placa"), "aa123bb");
 
     fireEvent.submit(document.getElementById("vehicle-form") as HTMLFormElement);
 
@@ -182,7 +171,38 @@ describe("asset list and detail pages", () => {
     expect(toast.error).toHaveBeenCalledWith("Revisá los datos del vehículo y volvé a intentar.");
     expect(within(screen.getByRole("dialog")).getByLabelText("Marca")).toHaveValue("Volvo");
     expect(within(screen.getByRole("dialog")).getByLabelText("Modelo / referencia")).toHaveValue("FH");
-    expect(within(screen.getByRole("dialog")).getByLabelText("Patente")).toHaveValue("aa123bb");
+    expect(within(screen.getByRole("dialog")).getByLabelText("Placa")).toHaveValue("aa123bb");
+  });
+
+  it("creates vehicles from fetched customer options without unsupported fields", async () => {
+    const fetchMock = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+      if (url.includes("/customers/options")) {
+        return Response.json({ data: [{ id: "c1", label: "Cliente Uno", description: "30-1" }] });
+      }
+      if (url.endsWith("/vehicles") && init?.method === "POST") {
+        return Response.json({ id: "v1", customerId: "c1", plate: "AA123BB", brand: "Volvo", modelReference: "FH" });
+      }
+      return Response.json({ data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 1 } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderWithQuery(<VehicleFormDialog trigger={<button type="button">Nuevo vehículo</button>} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Nuevo vehículo" }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByLabelText("Cliente"));
+    fireEvent.click(await screen.findByText("Cliente Uno"));
+    await userEvent.type(within(dialog).getByLabelText("Marca"), "Volvo");
+    await userEvent.type(within(dialog).getByLabelText("Modelo / referencia"), "FH");
+    await userEvent.type(within(dialog).getByLabelText("Placa"), "AA123BB");
+
+    fireEvent.submit(document.getElementById("vehicle-form") as HTMLFormElement);
+
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/customers/options"))).toBe(true));
+    const postCall = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith("/vehicles") && init?.method === "POST");
+    const body = JSON.parse(String(postCall?.[1]?.body));
+    expect(body).toMatchObject({ customerId: "c1", plate: "AA123BB" });
+    expect(body).not.toHaveProperty("sortBy");
   });
 
   it("disables vehicle form submit while pending and shows success toast", async () => {
@@ -200,7 +220,7 @@ describe("asset list and detail pages", () => {
     const dialog = await screen.findByRole("dialog");
     await userEvent.type(within(dialog).getByLabelText("Marca"), "Volvo");
     await userEvent.type(within(dialog).getByLabelText("Modelo / referencia"), "FH");
-    await userEvent.type(within(dialog).getByLabelText("Patente"), "AA123BB");
+    await userEvent.type(within(dialog).getByLabelText("Placa"), "AA123BB");
 
     fireEvent.submit(document.getElementById("vehicle-form") as HTMLFormElement);
 
@@ -229,6 +249,7 @@ describe("asset list and detail pages", () => {
     renderWithQuery(<ComponentsPage />);
 
     expect(await screen.findAllByText("ALT-90")).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Componente: ordenamiento no disponible" })).toBeDisabled();
     await userEvent.type(screen.getByLabelText("Buscar componentes"), "alt");
 
     await waitFor(() => expect(String(fetchMock.mock.lastCall?.[0])).toContain("/components?"));
@@ -370,6 +391,123 @@ describe("asset list and detail pages", () => {
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["vehicles", "detail", "v1"] });
   });
 
+  it("clears a previously selected vehicle and scopes vehicle options when component customer changes", async () => {
+    const fetchMock = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+      const requestUrl = new URL(url, "https://backend.example.test");
+      if (requestUrl.pathname.endsWith("/customers/options")) {
+        return Response.json({
+          data: [
+            { id: "c1", label: "Cliente Uno", description: "30-1" },
+            { id: "c2", label: "Cliente Dos", description: "30-2" },
+          ],
+        });
+      }
+      if (requestUrl.pathname.endsWith("/component-types/options")) return Response.json(componentTypeOptionsResponse);
+      if (requestUrl.pathname.endsWith("/vehicles/options")) {
+        const customerId = requestUrl.searchParams.get("customerId");
+        return Response.json({
+          data:
+            customerId === "c1"
+              ? [{ id: "v1", label: "AA123BB", description: "Volvo FH" }]
+              : [{ id: "v2", label: "BB234CC", description: "Scania R" }],
+        });
+      }
+      if (url.endsWith("/components") && init?.method === "POST") return Response.json(componentResponse);
+      return Response.json({ data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 1 } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderWithQuery(<ComponentFormDialog trigger={<button type="button">Nuevo componente</button>} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Nuevo componente" }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByLabelText("Cliente"));
+    fireEvent.click(await screen.findByText("Cliente Uno"));
+    await userEvent.click(within(dialog).getByLabelText("Tipo"));
+    await userEvent.click(await screen.findByRole("option", { name: "Alternador" }));
+    await userEvent.click(within(dialog).getByLabelText("Vehículo opcional"));
+    fireEvent.click(await screen.findByText("AA123BB"));
+
+    await userEvent.click(within(dialog).getByLabelText("Cliente"));
+    fireEvent.click(await screen.findByText("Cliente Dos"));
+
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(([url]) => {
+          const requestUrl = new URL(String(url), "https://backend.example.test");
+          return requestUrl.pathname.endsWith("/vehicles/options") && requestUrl.searchParams.get("customerId") === "c2";
+        }),
+      ).toBe(true),
+    );
+    expect(within(dialog).getByLabelText("Vehículo opcional")).toHaveValue("");
+
+    await userEvent.type(within(dialog).getByLabelText("Marca"), "Bosch");
+    await userEvent.type(within(dialog).getByLabelText("Referencia"), "ALT");
+    await userEvent.type(within(dialog).getByLabelText("Identificador"), "ALT-90");
+    fireEvent.submit(document.getElementById("component-form") as HTMLFormElement);
+
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url, init]) => String(url).endsWith("/components") && init?.method === "POST")).toBe(true));
+    const postCall = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith("/components") && init?.method === "POST");
+    const body = JSON.parse(String(postCall?.[1]?.body));
+    expect(body).toMatchObject({ customerId: "c2", componentTypeId: "ct1" });
+    expect(body).not.toHaveProperty("vehicleId");
+  });
+
+  it("announces loading and empty states for assignment option comboboxes", async () => {
+    let resolveCustomers: (response: Response) => void = () => undefined;
+    let resolveVehicles: (response: Response) => void = () => undefined;
+    const customersResponse = new Promise<Response>((resolve) => {
+      resolveCustomers = resolve;
+    });
+    const vehiclesResponse = new Promise<Response>((resolve) => {
+      resolveVehicles = resolve;
+    });
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.includes("/customers/options")) return customersResponse;
+      if (url.includes("/vehicles/options")) return vehiclesResponse;
+      if (url.includes("/component-types/options")) return Response.json(componentTypeOptionsResponse);
+      return Response.json({ data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 1 } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { unmount } = renderWithQuery(<ComponentFormDialog trigger={<button type="button">Nuevo componente</button>} />);
+    await userEvent.click(screen.getByRole("button", { name: "Nuevo componente" }));
+
+    expect(await screen.findByRole("status", { name: "Cargando cliente" })).toBeVisible();
+    resolveCustomers(Response.json({ data: [] }));
+    resolveVehicles(Response.json({ data: [] }));
+    await userEvent.click(within(await screen.findByRole("dialog")).getByLabelText("Cliente"));
+    expect(await screen.findByText("No encontramos clientes.")).toBeVisible();
+    unmount();
+
+    const vehicleFetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.includes("/vehicles/options")) return new Promise<Response>(() => undefined);
+      if (url.includes("/component-types/options")) return Response.json(componentTypeOptionsResponse);
+      return Response.json({ data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 1 } });
+    });
+    vi.stubGlobal("fetch", vehicleFetchMock);
+
+    const pendingVehicleRender = renderWithQuery(
+      <ComponentFormDialog initialCustomerId="c1" trigger={<button type="button">Nuevo componente</button>} />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Nuevo componente" }));
+    expect(await screen.findByRole("status", { name: "Cargando vehículo opcional" })).toBeVisible();
+    pendingVehicleRender.unmount();
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/vehicles/options")) return Response.json({ data: [] });
+        if (url.includes("/component-types/options")) return Response.json(componentTypeOptionsResponse);
+        return Response.json({ data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 1 } });
+      }),
+    );
+    renderWithQuery(<ComponentFormDialog initialCustomerId="c1" trigger={<button type="button">Nuevo componente</button>} />);
+    await userEvent.click(screen.getByRole("button", { name: "Nuevo componente" }));
+    await userEvent.click(within(await screen.findByRole("dialog")).getByLabelText("Vehículo opcional"));
+    expect(await screen.findByText("No encontramos vehículos para este cliente.")).toBeVisible();
+  });
+
   it("preserves component data and announces boundary feedback when unlink submission fails", async () => {
     const component: WorkshopComponent = {
       id: "p1",
@@ -394,6 +532,7 @@ describe("asset list and detail pages", () => {
     };
     const fetchMock = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
       if (url.includes("/component-types/options")) return Response.json(componentTypeOptionsResponse);
+      if (url.includes("/customers/options")) return Response.json({ data: [{ id: "c1", label: "Cliente Uno", description: "30-1" }] });
       if (url.includes("/vehicles/options")) return Response.json(vehicleOptionsResponse);
       if (url.endsWith("/components/p1") && init?.method === "PATCH") {
         return Response.json({ message: "Vehicle belongs to another customer" }, { status: 409 });

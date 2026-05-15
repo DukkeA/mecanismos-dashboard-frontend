@@ -15,7 +15,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { OptionCombobox } from "@/features/assets/option-combobox";
 import { useComponentTypeOptionsQuery } from "@/hooks/use-component-types";
 import { useCreateComponentMutation, useUpdateComponentMutation } from "@/hooks/use-components";
-import { useCustomerSearchQuery } from "@/hooks/use-customers";
+import { useCustomerOptionsQuery } from "@/hooks/use-customers";
 import { useVehicleOptionsQuery } from "@/hooks/use-vehicles";
 import type { ComponentFormPayload, ComponentUpdatePayload, WorkshopComponent } from "@/lib/components/types";
 import { componentFormSchema, componentUpdateSchema, emptyComponentFormValues, type ComponentFormInput } from "@/lib/validation/components";
@@ -29,7 +29,7 @@ export function ComponentFormDialog({ component, trigger, initialCustomerId, ini
   const [serverError, setServerError] = useState<string | null>(null);
   const [customerSearch, setCustomerSearch] = useState("");
   const [vehicleSearch, setVehicleSearch] = useState("");
-  const customersQuery = useCustomerSearchQuery({ search: customerSearch, limit: 8 });
+  const customersQuery = useCustomerOptionsQuery({ search: customerSearch, limit: 8, isActive: true, enabled: !initialCustomerId });
   const vehicleOptionsQuery = useVehicleOptionsQuery({ search: vehicleSearch, customerId: values.customerId, limit: 8 });
   const componentTypeOptionsQuery = useComponentTypeOptionsQuery({ isActive: true, limit: 50 });
   const createMutation = useCreateComponentMutation();
@@ -87,7 +87,7 @@ export function ComponentFormDialog({ component, trigger, initialCustomerId, ini
         <form id="component-form" className="flex flex-col gap-6" onSubmit={handleSubmit}>
           {serverError ? <Alert variant="destructive"><AlertTitle>No pudimos guardar el componente</AlertTitle><AlertDescription>{serverError}</AlertDescription></Alert> : null}
           <FieldGroup className="gap-4">
-            {!isEditing ? <OptionCombobox id="component-customer" label="Cliente" value={values.customerId} options={(customersQuery.data ?? []).map((customer) => ({ id: customer.id, label: customer.name, description: customer.documentNumber }))} inputValue={customerSearch} placeholder="Buscar cliente" emptyText="No encontramos clientes." error={errors.customerId} disabled={isPending || Boolean(initialCustomerId)} isFetching={customersQuery.isFetching} onInputValueChange={setCustomerSearch} onValueChange={(option) => { updateField("customerId", option?.id ?? ""); updateField("vehicleId", undefined); }} /> : null}
+            {isEditing ? <Field data-disabled><FieldLabel>Cliente</FieldLabel><p className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">{component?.customerId ?? "Cliente actual"} · no se reasigna desde edición</p></Field> : <OptionCombobox id="component-customer" label="Cliente" value={values.customerId} options={(customersQuery.data ?? []).map((customer) => ({ id: customer.id, label: customer.label, description: customer.description }))} selectedOption={initialCustomerId ? { id: initialCustomerId, label: initialCustomerId, description: "Cliente preseleccionado" } : undefined} inputValue={customerSearch} placeholder="Buscar cliente" emptyText="No encontramos clientes." error={errors.customerId} disabled={isPending || Boolean(initialCustomerId)} isFetching={customersQuery.isFetching} modal onInputValueChange={setCustomerSearch} onValueChange={(option) => { updateField("customerId", option?.id ?? ""); updateField("vehicleId", undefined); }} />}
             <Field data-invalid={Boolean(errors.componentTypeId)} data-disabled={isPending}>
               <FieldLabel htmlFor="component-type">Tipo</FieldLabel>
               <Select value={values.componentTypeId} disabled={isPending} onValueChange={(value) => updateField("componentTypeId", value)}>
@@ -96,7 +96,7 @@ export function ComponentFormDialog({ component, trigger, initialCustomerId, ini
               </Select>
               <FieldError errors={[{ message: errors.componentTypeId }]} />
             </Field>
-            <OptionCombobox id="component-vehicle" label="Vehículo opcional" value={values.vehicleId ?? undefined} options={(vehicleOptionsQuery.data ?? []).map((option) => ({ id: option.id, label: option.label, description: option.description }))} inputValue={vehicleSearch} placeholder="Buscar vehículo o dejar vacío" emptyText="No encontramos vehículos para este cliente." error={errors.vehicleId} disabled={isPending || !values.customerId} isFetching={vehicleOptionsQuery.isFetching} onInputValueChange={setVehicleSearch} onValueChange={(option) => updateField("vehicleId", option?.id ?? (component ? null : undefined))} />
+            <OptionCombobox id="component-vehicle" label="Vehículo opcional" value={values.vehicleId ?? undefined} options={(vehicleOptionsQuery.data ?? []).map((option) => ({ id: option.id, label: option.label, description: option.description }))} inputValue={vehicleSearch} placeholder="Buscar vehículo o dejar vacío" emptyText="No encontramos vehículos para este cliente." error={errors.vehicleId} disabled={isPending || !values.customerId} isFetching={vehicleOptionsQuery.isFetching} modal onInputValueChange={setVehicleSearch} onValueChange={(option) => updateField("vehicleId", option?.id ?? (component ? null : undefined))} />
             {component?.vehicleId ? <Button type="button" variant="outline" className="w-fit" disabled={isPending} onClick={() => updateField("vehicleId", null)}>Quitar vínculo con vehículo</Button> : null}
             <div className="grid gap-4 md:grid-cols-2">
               <TextField id="component-brand" label="Marca" value={values.brand} error={errors.brand} disabled={isPending} onChange={(value) => updateField("brand", value)} />

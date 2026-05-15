@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertCircleIcon, MoreHorizontalIcon, WrenchIcon } from "lucide-react";
+import { AlertCircleIcon, ArrowUpDownIcon, MoreHorizontalIcon, WrenchIcon } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,7 @@ export function ComponentsTable({ params, page, isPending, isError, onRetry, onP
   return (
     <Card className="gap-0 p-0">
       <CardContent className="p-0">
-        <div className="hidden md:block"><Table><TableHeader><TableRow><TableHead>Componente</TableHead><TableHead>Tipo</TableHead><TableHead>Marca</TableHead><TableHead>Vehículo</TableHead><TableHead className="text-right">Acciones</TableHead></TableRow></TableHeader><TableBody>{rows.map((component) => <ComponentRow key={component.id} component={component} />)}</TableBody></Table></div>
+        <div className="hidden md:block"><Table><TableHeader><TableRow><TableHead><DisabledSortHeader label="Componente" /></TableHead><TableHead><DisabledSortHeader label="Tipo" /></TableHead><TableHead><DisabledSortHeader label="Marca" /></TableHead><TableHead><DisabledSortHeader label="Vehículo" /></TableHead><TableHead className="text-right">Acciones</TableHead></TableRow></TableHeader><TableBody>{rows.map((component) => <ComponentRow key={component.id} component={component} />)}</TableBody></Table></div>
         <div className="grid gap-3 p-4 md:hidden">{rows.map((component) => <ComponentMobileCard key={component.id} component={component} />)}</div>
       </CardContent>
       {page ? <AssetPagination label="componente" params={params} meta={page.meta} onParamsChange={onParamsChange} /> : null}
@@ -48,6 +48,10 @@ export function ComponentActions({ component }: { component: WorkshopComponent }
 
 export function displayName(component: WorkshopComponent) {
   return component.identifier ?? `${component.componentType?.name ?? "Componente"} ${component.reference}`;
+}
+
+function DisabledSortHeader({ label }: { label: string }) {
+  return <Button type="button" variant="ghost" size="sm" className="-ml-3" disabled aria-label={`${label}: ordenamiento no disponible`} title="Ordenamiento pendiente de soporte backend">{label}<ArrowUpDownIcon data-icon="inline-end" aria-hidden="true" /></Button>;
 }
 
 function ComponentsSkeleton() {

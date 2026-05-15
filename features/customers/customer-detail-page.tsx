@@ -106,7 +106,7 @@ function CustomerDetail({ customer }: { customer: Customer }) {
         </InfoCard>
         <InfoCard title="Datos comerciales" description="Información base para órdenes y facturación.">
           <InfoRow label="Documento" value={customer.documentNumber} />
-          <InfoRow label="Dirección" value={customer.address ?? "Sin dirección"} />
+          <InfoRow label="Tipo de documento" value={customer.documentType} />
         </InfoCard>
       </div>
 

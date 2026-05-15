@@ -8,6 +8,7 @@ import {
   customersQueryKeys,
   useCreateCustomerMutation,
   useCustomerQuery,
+  useCustomerOptionsQuery,
   useCustomersQuery,
   useCustomerSearchQuery,
   useUpdateCustomerMutation,
@@ -52,6 +53,9 @@ describe("customer TanStack Query hooks", () => {
       )
       .mockResolvedValueOnce(
         Response.json([{ id: "c1", name: "Acme", documentNumber: "30" }]),
+      )
+      .mockResolvedValueOnce(
+        Response.json({ data: [{ id: "c1", label: "Acme", description: "30" }] }),
       );
     vi.stubGlobal("fetch", fetchMock);
 
@@ -61,7 +65,7 @@ describe("customer TanStack Query hooks", () => {
           page: 2,
           limit: 20,
           search: "acme",
-          status: "active",
+          isActive: true,
           sortBy: "name",
           sortDir: "asc",
         }),
@@ -79,9 +83,14 @@ describe("customer TanStack Query hooks", () => {
     });
     await waitFor(() => expect(search.result.current.isSuccess).toBe(true));
 
+    const options = renderHook(() => useCustomerOptionsQuery({ search: "ac", limit: 5, isActive: true }), {
+      wrapper: createWrapper(queryClient),
+    });
+    await waitFor(() => expect(options.result.current.isSuccess).toBe(true));
+
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      "https://backend.example.test/customers?page=2&limit=20&search=acme&status=active&sortBy=name&sortDir=asc",
+      "https://backend.example.test/customers?page=2&limit=20&search=acme&isActive=true&sortBy=name&sortDir=asc",
       expect.objectContaining({ credentials: "include" }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
@@ -91,7 +100,12 @@ describe("customer TanStack Query hooks", () => {
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       3,
-      "https://backend.example.test/customers?page=1&limit=5&search=ac&sortBy=name&sortDir=asc",
+      "https://backend.example.test/customers/options?search=ac&limit=5",
+      expect.objectContaining({ credentials: "include" }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      "https://backend.example.test/customers/options?search=ac&limit=5&isActive=true",
       expect.objectContaining({ credentials: "include" }),
     );
   });
@@ -112,8 +126,16 @@ describe("customer TanStack Query hooks", () => {
     });
     await create.result.current.mutateAsync({
       name: "Nuevo",
+      documentType: "CUIT",
       documentNumber: "31",
       status: "active",
+    });
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body as string)).toEqual({
+      name: "Nuevo",
+      documentType: "CUIT",
+      documentNumber: "31",
+      isActive: true,
     });
 
     expect(toast.success).toHaveBeenCalledWith("Cliente creado.");
@@ -127,9 +149,14 @@ describe("customer TanStack Query hooks", () => {
     await expect(
       update.result.current.mutateAsync({
         id: "c1",
-        input: { name: "Fallido", documentNumber: "30", status: "active" },
+        input: { name: "Fallido", documentType: "DNI", documentNumber: "30", status: "inactive" },
       }),
     ).rejects.toThrow("No");
+
+    const updateBody = JSON.parse(fetchMock.mock.calls[1][1].body as string);
+    expect(updateBody).toMatchObject({ documentType: "DNI", isActive: false });
+    expect(updateBody).not.toHaveProperty("status");
+    expect(updateBody).not.toHaveProperty("address");
 
     expect(queryClient.getQueryData(customersQueryKeys.detail("c1"))).toMatchObject({
       name: "Old",

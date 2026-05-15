@@ -16,7 +16,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { OptionCombobox } from "@/features/assets/option-combobox";
@@ -24,8 +29,12 @@ import {
   useCreateVehicleMutation,
   useUpdateVehicleMutation,
 } from "@/hooks/use-vehicles";
-import { useCustomerSearchQuery } from "@/hooks/use-customers";
-import type { Vehicle, VehicleFormPayload, VehicleUpdatePayload } from "@/lib/vehicles/types";
+import { useCustomerOptionsQuery } from "@/hooks/use-customers";
+import type {
+  Vehicle,
+  VehicleFormPayload,
+  VehicleUpdatePayload,
+} from "@/lib/vehicles/types";
 import {
   emptyVehicleFormValues,
   vehicleFormSchema,
@@ -51,7 +60,12 @@ export function VehicleFormDialog({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [customerSearch, setCustomerSearch] = useState("");
-  const customersQuery = useCustomerSearchQuery({ search: customerSearch, limit: 8 });
+  const customersQuery = useCustomerOptionsQuery({
+    search: customerSearch,
+    limit: 8,
+    isActive: true,
+    enabled: !initialCustomerId,
+  });
   const createMutation = useCreateVehicleMutation();
   const updateMutation = useUpdateVehicleMutation();
   const isEditing = Boolean(vehicle);
@@ -83,18 +97,26 @@ export function VehicleFormDialog({
     setServerError(null);
     try {
       if (vehicle) {
-        await updateMutation.mutateAsync({ id: vehicle.id, input: parsed.data as VehicleUpdatePayload });
+        await updateMutation.mutateAsync({
+          id: vehicle.id,
+          input: parsed.data as VehicleUpdatePayload,
+        });
       } else {
         await createMutation.mutateAsync(parsed.data as VehicleFormPayload);
       }
       setOpen(false);
     } catch {
-      setServerError("No pudimos guardar el vehículo. Revisá los datos y volvé a intentar.");
+      setServerError(
+        "No pudimos guardar el vehículo. Revisá los datos y volvé a intentar.",
+      );
       toast.error("Revisá los datos del vehículo y volvé a intentar.");
     }
   }
 
-  function updateField<K extends keyof VehicleFormInput>(key: K, value: VehicleFormInput[K]) {
+  function updateField<K extends keyof VehicleFormInput>(
+    key: K,
+    value: VehicleFormInput[K],
+  ) {
     setValues((current) => ({ ...current, [key]: value }));
     setErrors((current) => ({ ...current, [key]: undefined }));
   }
@@ -104,14 +126,20 @@ export function VehicleFormDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar vehículo" : "Nuevo vehículo"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? "Editar vehículo" : "Nuevo vehículo"}
+          </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? "Actualizá marca, modelo, patente y notas sin reasignar el cliente."
+              ? "Actualizá marca, modelo, placa y notas sin reasignar el cliente."
               : "Cargá un vehículo asociado a un cliente existente."}
           </DialogDescription>
         </DialogHeader>
-        <form id="vehicle-form" className="flex flex-col gap-6" onSubmit={handleSubmit}>
+        <form
+          id="vehicle-form"
+          className="flex flex-col gap-6"
+          onSubmit={handleSubmit}
+        >
           {serverError ? (
             <Alert variant="destructive">
               <AlertTitle>No pudimos guardar el vehículo</AlertTitle>
@@ -119,36 +147,93 @@ export function VehicleFormDialog({
             </Alert>
           ) : null}
           <FieldGroup className="gap-4">
-            {!isEditing ? (
+            {isEditing ? (
+              <Field data-disabled>
+                <FieldLabel>Cliente</FieldLabel>
+                <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                  {vehicle?.customerId ?? "Cliente actual"} · no se reasigna
+                  desde edición
+                </p>
+              </Field>
+            ) : (
               <OptionCombobox
                 id="vehicle-customer"
                 label="Cliente"
                 value={values.customerId}
                 options={(customersQuery.data ?? []).map((customer) => ({
                   id: customer.id,
-                  label: customer.name,
-                  description: customer.documentNumber,
+                  label: customer.label,
+                  description: customer.description,
                 }))}
+                selectedOption={
+                  initialCustomerId
+                    ? {
+                        id: initialCustomerId,
+                        label: initialCustomerId,
+                        description: "Cliente preseleccionado",
+                      }
+                    : undefined
+                }
                 inputValue={customerSearch}
-                placeholder={initialCustomerId ? "Cliente preseleccionado" : "Buscar cliente"}
+                placeholder={
+                  initialCustomerId
+                    ? "Cliente preseleccionado"
+                    : "Buscar cliente"
+                }
                 emptyText="No encontramos clientes."
                 error={errors.customerId}
                 disabled={isPending || Boolean(initialCustomerId)}
                 isFetching={customersQuery.isFetching}
+                modal
                 onInputValueChange={setCustomerSearch}
-                onValueChange={(option) => updateField("customerId", option?.id ?? "")}
+                onValueChange={(option) =>
+                  updateField("customerId", option?.id ?? "")
+                }
               />
-            ) : null}
+            )}
             <div className="grid gap-4 md:grid-cols-2">
-              <TextField id="vehicle-brand" label="Marca" value={values.brand} error={errors.brand} disabled={isPending} onChange={(value) => updateField("brand", value)} />
-              <TextField id="vehicle-model" label="Modelo / referencia" value={values.modelReference} error={errors.modelReference} disabled={isPending} onChange={(value) => updateField("modelReference", value)} />
-              <TextField id="vehicle-plate" label="Patente" value={values.plate} error={errors.plate} disabled={isPending} onChange={(value) => updateField("plate", value)} />
+              <TextField
+                id="vehicle-brand"
+                label="Marca"
+                value={values.brand}
+                error={errors.brand}
+                disabled={isPending}
+                onChange={(value) => updateField("brand", value)}
+              />
+              <TextField
+                id="vehicle-model"
+                label="Modelo / referencia"
+                value={values.modelReference}
+                error={errors.modelReference}
+                disabled={isPending}
+                onChange={(value) => updateField("modelReference", value)}
+              />
+              <TextField
+                id="vehicle-plate"
+                label="Placa"
+                value={values.plate}
+                error={errors.plate}
+                disabled={isPending}
+                onChange={(value) => updateField("plate", value)}
+              />
             </div>
-            <RichTextField id="vehicle-notes" label="Notas" value={values.notes} error={errors.notes} disabled={isPending} onChange={(value) => updateField("notes", value)} />
+            <RichTextField
+              id="vehicle-notes"
+              label="Notas"
+              value={values.notes}
+              error={errors.notes}
+              disabled={isPending}
+              onChange={(value) => updateField("notes", value)}
+            />
           </FieldGroup>
         </form>
         <DialogFooter>
-          <Button type="button" variant="outline" disabled={isPending} onClick={() => setOpen(false)}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isPending}
+            onClick={() => setOpen(false)}
+          >
             Cancelar
           </Button>
           <Button type="submit" form="vehicle-form" disabled={isPending}>
@@ -161,18 +246,42 @@ export function VehicleFormDialog({
   );
 }
 
-function TextField({ id, label, value, error, disabled, onChange }: { id: string; label: string; value: string; error?: string; disabled?: boolean; onChange: (value: string) => void }) {
+function TextField({
+  id,
+  label,
+  value,
+  error,
+  disabled,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  error?: string;
+  disabled?: boolean;
+  onChange: (value: string) => void;
+}) {
   return (
     <Field data-invalid={Boolean(error)} data-disabled={disabled}>
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
-      <Input id={id} value={value} disabled={disabled} aria-invalid={Boolean(error)} onChange={(event) => onChange(event.target.value)} />
+      <Input
+        id={id}
+        value={value}
+        disabled={disabled}
+        aria-invalid={Boolean(error)}
+        onChange={(event) => onChange(event.target.value)}
+      />
       <FieldError errors={[{ message: error }]} />
     </Field>
   );
 }
 
-function getInitialValues(vehicle?: Vehicle, initialCustomerId?: string): VehicleFormInput {
-  if (!vehicle) return { ...emptyVehicleFormValues, customerId: initialCustomerId ?? "" };
+function getInitialValues(
+  vehicle?: Vehicle,
+  initialCustomerId?: string,
+): VehicleFormInput {
+  if (!vehicle)
+    return { ...emptyVehicleFormValues, customerId: initialCustomerId ?? "" };
 
   return {
     customerId: vehicle.customerId,

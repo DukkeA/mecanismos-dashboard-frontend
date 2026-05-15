@@ -47,7 +47,8 @@ describe("CustomersPage", () => {
               documentNumber: "30-1",
               email: "ops@austral.test",
               phone: "29155501",
-              status: "active",
+              documentType: "CUIT",
+              isActive: true,
             },
           ],
           meta: { page: 1, limit: 10, total: 1, totalPages: 1 },
@@ -87,7 +88,8 @@ describe("CustomersPage", () => {
             documentNumber: "30-1",
             email: "ops@austral.test",
             phone: "29155501",
-            status: "active",
+              documentType: "CUIT",
+              isActive: true,
           },
         ],
         meta: { page: 1, limit: 10, total: 11, totalPages: 2 },
@@ -177,6 +179,11 @@ describe("CustomersPage", () => {
       expect(within(screen.getByRole("dialog")).getByLabelText("Nombre o razón social"))
         .toBeDisabled(),
     );
+    const postCall = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith("/customers") && init?.method === "POST");
+    const postBody = JSON.parse(String(postCall?.[1]?.body));
+    expect(postBody).toMatchObject({ documentType: "CUIT", isActive: true });
+    expect(postBody).not.toHaveProperty("status");
+    expect(postBody).not.toHaveProperty("address");
 
     resolveCreate(Response.json({ id: "c9", name: "Nuevo Cliente", documentNumber: "31" }));
 
@@ -252,5 +259,5 @@ describe("CustomersPage", () => {
 });
 
 function customerRow(id: string, name: string, notes: Customer["notes"]): Customer {
-  return { id, name, documentNumber: "30-1", email: null, phone: null, address: null, notes, status: "active", createdAt: null, updatedAt: null };
+  return { id, name, documentType: "CUIT", documentNumber: "30-1", email: null, phone: null, notes, status: "active", createdAt: null, updatedAt: null };
 }

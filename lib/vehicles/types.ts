@@ -84,7 +84,7 @@ export function mapVehicle(dto: VehicleDto): Vehicle {
     customerId: String(dto.customerId),
     brand: dto.brand?.trim() || "Sin marca",
     modelReference: dto.modelReference?.trim() || "Sin modelo",
-    plate: dto.plate?.trim() || "Sin patente",
+    plate: dto.plate?.trim() || "Sin placa",
     notes: normalizeRichTextNote(dto.notes),
     createdAt: dto.createdAt || null,
     updatedAt: dto.updatedAt || null,
@@ -118,7 +118,7 @@ export function mapVehicleOptions(
 
   return options.map((option) => ({
     id: String(option.id),
-    label: option.label?.trim() || "Vehículo sin patente",
+    label: option.label?.trim() || "Vehículo sin placa",
     description: option.description?.trim() || null,
     context: option.context,
   }));

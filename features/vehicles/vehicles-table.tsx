@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertCircleIcon, CarFrontIcon, MoreHorizontalIcon } from "lucide-react";
+import { AlertCircleIcon, ArrowUpDownIcon, CarFrontIcon, MoreHorizontalIcon } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -51,9 +51,9 @@ export function VehiclesTable({ params, page, isPending, isError, onRetry, onPar
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Patente</TableHead>
-                <TableHead>Marca</TableHead>
-                <TableHead>Modelo</TableHead>
+                <TableHead><DisabledSortHeader label="Placa" /></TableHead>
+                <TableHead><DisabledSortHeader label="Marca" /></TableHead>
+                <TableHead><DisabledSortHeader label="Modelo" /></TableHead>
                 <TableHead>Notas</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -69,6 +69,23 @@ export function VehiclesTable({ params, page, isPending, isError, onRetry, onPar
       </CardContent>
       {page ? <AssetPagination label="vehículo" params={params} meta={page.meta} onParamsChange={onParamsChange} /> : null}
     </Card>
+  );
+}
+
+function DisabledSortHeader({ label }: { label: string }) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      className="-ml-3"
+      disabled
+      aria-label={`${label}: ordenamiento no disponible`}
+      title="Ordenamiento pendiente de soporte backend"
+    >
+      {label}
+      <ArrowUpDownIcon data-icon="inline-end" aria-hidden="true" />
+    </Button>
   );
 }
 

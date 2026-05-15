@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { SearchIcon } from "lucide-react";
 
 import {
@@ -26,12 +25,14 @@ export function OptionCombobox({
   label,
   value,
   options,
+  selectedOption: selectedOptionProp,
   inputValue,
   placeholder,
   emptyText,
   error,
   disabled,
   isFetching,
+  modal,
   onInputValueChange,
   onValueChange,
 }: {
@@ -39,21 +40,21 @@ export function OptionCombobox({
   label: string;
   value?: string | null;
   options: ComboboxOption[];
+  selectedOption?: ComboboxOption | null;
   inputValue: string;
   placeholder: string;
   emptyText: string;
   error?: string;
   disabled?: boolean;
   isFetching?: boolean;
+  modal?: boolean;
   onInputValueChange: (value: string) => void;
   onValueChange: (value: ComboboxOption | null) => void;
 }) {
-  const [selectedOption, setSelectedOption] = useState<ComboboxOption | null>(
-    () => options.find((option) => option.id === value) ?? null,
-  );
+  const resolvedSelectedOption =
+    selectedOptionProp ?? options.find((option) => option.id === value) ?? null;
 
   function selectOption(option: ComboboxOption | null) {
-    setSelectedOption(option);
     onValueChange(option);
   }
 
@@ -62,7 +63,8 @@ export function OptionCombobox({
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <Combobox
         items={options}
-        value={selectedOption ?? options.find((option) => option.id === value) ?? null}
+        value={resolvedSelectedOption}
+        modal={modal}
         itemToStringValue={(option: ComboboxOption) => option.label}
         inputValue={inputValue}
         onInputValueChange={onInputValueChange}
@@ -76,7 +78,11 @@ export function OptionCombobox({
           showClear
         >
           <InputGroupAddon>
-            {isFetching ? <Spinner aria-hidden="true" /> : <SearchIcon aria-hidden="true" />}
+            {isFetching ? (
+              <Spinner aria-label={`Cargando ${label.toLowerCase()}`} />
+            ) : (
+              <SearchIcon aria-hidden="true" />
+            )}
           </InputGroupAddon>
         </ComboboxInput>
         <ComboboxContent>

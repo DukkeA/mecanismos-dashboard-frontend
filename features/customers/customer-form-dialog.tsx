@@ -30,7 +30,7 @@ import {
   useCreateCustomerMutation,
   useUpdateCustomerMutation,
 } from "@/hooks/use-customers";
-import type { Customer, CustomerFormPayload, CustomerStatus } from "@/lib/customers/types";
+import type { Customer, CustomerDocumentType, CustomerFormPayload, CustomerStatus } from "@/lib/customers/types";
 import {
   customerFormSchema,
   emptyCustomerFormValues,
@@ -124,6 +124,28 @@ export function CustomerFormDialog({ customer, trigger }: Props) {
                 disabled={isPending}
                 onChange={(value) => updateField("documentNumber", value)}
               />
+              <Field data-invalid={Boolean(errors.documentType)} data-disabled={isPending}>
+                <FieldLabel htmlFor="customer-document-type">Tipo de documento</FieldLabel>
+                <Select
+                  value={values.documentType ?? "CUIT"}
+                  onValueChange={(value) =>
+                    updateField("documentType", value as CustomerDocumentType)
+                  }
+                  disabled={isPending}
+                >
+                  <SelectTrigger id="customer-document-type" aria-invalid={Boolean(errors.documentType)}>
+                    <SelectValue placeholder="Seleccionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="CUIT">CUIT</SelectItem>
+                      <SelectItem value="CUIL">CUIL</SelectItem>
+                      <SelectItem value="DNI">DNI</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <FieldError errors={[{ message: errors.documentType }]} />
+              </Field>
               <TextField
                 id="customer-email"
                 label="Email"
@@ -140,14 +162,6 @@ export function CustomerFormDialog({ customer, trigger }: Props) {
                 error={errors.phone}
                 disabled={isPending}
                 onChange={(value) => updateField("phone", value)}
-              />
-              <TextField
-                id="customer-address"
-                label="Dirección"
-                value={values.address ?? ""}
-                error={errors.address}
-                disabled={isPending}
-                onChange={(value) => updateField("address", value)}
               />
               <Field data-invalid={Boolean(errors.status)} data-disabled={isPending}>
                 <FieldLabel htmlFor="customer-status">Estado</FieldLabel>
@@ -231,10 +245,10 @@ function getInitialValues(customer?: Customer): CustomerFormInput {
 
   return {
     name: customer.name,
+    documentType: customer.documentType,
     documentNumber: customer.documentNumber,
     email: customer.email ?? "",
     phone: customer.phone ?? "",
-    address: customer.address ?? "",
     notes: customer.notes,
     status: customer.status,
   };
