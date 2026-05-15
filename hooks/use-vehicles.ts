@@ -3,6 +3,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { brandsQueryKeys } from "@/hooks/use-brands";
 import { customersQueryKeys } from "@/hooks/use-customers";
 import { backendFetch } from "@/lib/api/backend";
 import { BackendRequestError } from "@/lib/api/errors";
@@ -133,6 +134,7 @@ async function invalidateVehicleData(
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: vehiclesQueryKeys.lists() }),
     queryClient.invalidateQueries({ queryKey: vehiclesQueryKeys.options() }),
+    queryClient.invalidateQueries({ queryKey: brandsQueryKeys.options() }),
     vehicle
       ? queryClient.invalidateQueries({ queryKey: vehiclesQueryKeys.detail(vehicle.id) })
       : queryClient.invalidateQueries({ queryKey: vehiclesQueryKeys.details() }),

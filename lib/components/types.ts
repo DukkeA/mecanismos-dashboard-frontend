@@ -1,4 +1,5 @@
 import type { PaginationMeta } from "@/lib/customers/types";
+import type { CustomerDocumentType } from "@/lib/customers/types";
 import type { ComponentType, ComponentTypeDto } from "@/lib/component-types/types";
 import { mapComponentType } from "@/lib/component-types/types";
 import { normalizeRichTextNote, type RichTextNote } from "@/lib/rich-text";
@@ -33,16 +34,28 @@ export type WorkshopComponent = {
 };
 
 export type ComponentFormPayload = {
-  customerId: string;
-  componentTypeId: string;
+  customerId?: string;
+  customer?: {
+    name: string;
+    phone: string;
+    documentType: CustomerDocumentType;
+    documentNumber: string;
+    email?: string;
+    notes?: RichTextNote;
+    isActive?: boolean;
+  };
+  componentTypeId?: string;
+  componentType?: { name: string; slug?: string };
   vehicleId?: string | null;
-  brand: string;
+  brandId?: string;
+  brand?: string | { name: string };
+  brandName?: string;
   reference: string;
   identifier?: string;
   notes?: RichTextNote;
 };
 
-export type ComponentUpdatePayload = Omit<ComponentFormPayload, "customerId">;
+export type ComponentUpdatePayload = Omit<ComponentFormPayload, "customerId" | "customer">;
 
 export type ComponentListParams = {
   page: number;

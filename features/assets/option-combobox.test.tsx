@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 const comboboxMock = vi.hoisted(() => ({
   rootProps: [] as Array<Record<string, unknown>>,
   contentProps: [] as Array<Record<string, unknown>>,
+  inputProps: [] as Array<Record<string, unknown>>,
 }));
 
 vi.mock("@/components/ui/combobox", () => ({
@@ -19,9 +20,10 @@ vi.mock("@/components/ui/combobox", () => ({
   ComboboxEmpty: ({ children }: { children: ReactNode }) => (
     <div>{children}</div>
   ),
-  ComboboxInput: ({ children }: { children: ReactNode }) => (
-    <div>{children}</div>
-  ),
+  ComboboxInput: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) => {
+    comboboxMock.inputProps.push(props);
+    return <div>{children}</div>;
+  },
   ComboboxItem: ({ children }: { children: ReactNode }) => (
     <div>{children}</div>
   ),
@@ -64,6 +66,20 @@ describe("OptionCombobox", () => {
       description: null,
     });
   });
+
+  it("renders a visible required marker when the field is required", () => {
+    const { getByText } = renderOptionCombobox({ required: true });
+
+    expect(getByText("*")).toBeVisible();
+  });
+
+  it("marks the input as required for assistive technology", () => {
+    renderOptionCombobox({ required: true });
+
+    expect(comboboxMock.inputProps.at(-1)).toMatchObject({
+      "aria-required": true,
+    });
+  });
 });
 
 function renderOptionCombobox(
@@ -71,6 +87,7 @@ function renderOptionCombobox(
 ) {
   comboboxMock.rootProps = [];
   comboboxMock.contentProps = [];
+  comboboxMock.inputProps = [];
 
   return render(
     <OptionCombobox

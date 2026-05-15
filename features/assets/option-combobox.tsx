@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/combobox";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { InputGroupAddon } from "@/components/ui/input-group";
+import { RequiredFieldLabel } from "@/components/required-field-label";
 import { Spinner } from "@/components/ui/spinner";
 
 export type ComboboxOption = {
@@ -31,6 +32,7 @@ export function OptionCombobox({
   placeholder,
   emptyText,
   error,
+  required,
   disabled,
   isFetching,
   modal,
@@ -47,6 +49,7 @@ export function OptionCombobox({
   placeholder: string;
   emptyText: string;
   error?: string;
+  required?: boolean;
   disabled?: boolean;
   isFetching?: boolean;
   modal?: boolean;
@@ -63,7 +66,11 @@ export function OptionCombobox({
 
   return (
     <Field data-invalid={Boolean(error)} data-disabled={disabled}>
-      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      {required ? (
+        <RequiredFieldLabel htmlFor={id}>{label}</RequiredFieldLabel>
+      ) : (
+        <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      )}
       <Combobox
         items={options}
         value={resolvedSelectedOption}
@@ -78,6 +85,8 @@ export function OptionCombobox({
           placeholder={placeholder}
           disabled={disabled}
           aria-invalid={Boolean(error)}
+          aria-required={required || undefined}
+          onChange={(event) => onInputValueChange(event.currentTarget.value)}
           showClear
         >
           <InputGroupAddon>

@@ -37,6 +37,13 @@ const vehicleOptionsResponse = {
   data: [{ id: "v1", label: "AA123BB", description: "Volvo FH" }],
 };
 
+const brandOptionsResponse = {
+  data: [
+    { id: "br-volvo", label: "Volvo", description: null },
+    { id: "br-bosch", label: "Bosch", description: null },
+  ],
+};
+
 const componentResponse = {
   id: "p1",
   customerId: "c1",
@@ -54,6 +61,7 @@ function mockComponentFormFetch(postResponse: Response | Promise<Response>) {
     if (url.includes("/customers/options")) return Response.json({ data: [{ id: "c1", label: "Cliente Uno", description: "30-1" }] });
     if (url.includes("/component-types/options")) return Response.json(componentTypeOptionsResponse);
     if (url.includes("/vehicles/options")) return Response.json(vehicleOptionsResponse);
+    if (url.includes("/brands/options")) return Response.json(brandOptionsResponse);
     if (url.endsWith("/components") && init?.method === "POST") return postResponse;
     return Response.json({ data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 1 } });
   });
@@ -180,6 +188,7 @@ describe("asset list and detail pages", () => {
       if (url.includes("/customers/options")) {
         return Response.json({ data: [{ id: "c1", label: "Cliente Uno", description: "30-1" }] });
       }
+      if (url.includes("/brands/options")) return Response.json(brandOptionsResponse);
       if (url.endsWith("/vehicles") && init?.method === "POST") {
         return Response.json({ id: "v1", customerId: "c1", plate: "AA123BB", brand: "Volvo", modelReference: "FH" });
       }
@@ -191,8 +200,9 @@ describe("asset list and detail pages", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Nuevo vehículo" }));
     const dialog = await screen.findByRole("dialog");
-    await userEvent.click(within(dialog).getByLabelText("Cliente"));
-    fireEvent.click(await screen.findByText("Cliente Uno"));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/customers/options"))).toBe(true));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/brands/options"))).toBe(true));
+    await userEvent.type(within(dialog).getByLabelText("Cliente"), "Cliente Uno");
     await userEvent.type(within(dialog).getByLabelText("Marca"), "Volvo");
     await userEvent.type(within(dialog).getByLabelText("Modelo / referencia"), "FH");
     await userEvent.type(within(dialog).getByLabelText("Placa"), "AA123BB");
@@ -202,7 +212,8 @@ describe("asset list and detail pages", () => {
     await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/customers/options"))).toBe(true));
     const postCall = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith("/vehicles") && init?.method === "POST");
     const body = JSON.parse(String(postCall?.[1]?.body));
-    expect(body).toMatchObject({ customerId: "c1", plate: "AA123BB" });
+    expect(body).toMatchObject({ customerId: "c1", brandId: "br-volvo", plate: "AA123BB" });
+    expect(body).not.toHaveProperty("brandName");
     expect(body).not.toHaveProperty("sortBy");
   });
 
@@ -211,7 +222,14 @@ describe("asset list and detail pages", () => {
     const createResponse = new Promise<Response>((resolve) => {
       resolveCreate = resolve;
     });
-    vi.stubGlobal("fetch", vi.fn().mockReturnValue(createResponse));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+        if (url.includes("/brands/options")) return Response.json(brandOptionsResponse);
+        if (url.endsWith("/vehicles") && init?.method === "POST") return createResponse;
+        return Response.json({ data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 1 } });
+      }),
+    );
 
     renderWithQuery(
       <VehicleFormDialog initialCustomerId="c1" trigger={<button type="button">Nuevo vehículo</button>} />,
@@ -360,10 +378,11 @@ describe("asset list and detail pages", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Nuevo componente" }));
     const dialog = await screen.findByRole("dialog");
-    await userEvent.click(within(dialog).getByLabelText("Tipo"));
-    await userEvent.click(await screen.findByRole("option", { name: "Alternador" }));
-    await userEvent.click(within(dialog).getByLabelText("Vehículo opcional"));
-    fireEvent.click(await screen.findByText("AA123BB"));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/component-types/options"))).toBe(true));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/vehicles/options"))).toBe(true));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/brands/options"))).toBe(true));
+    await userEvent.type(within(dialog).getByLabelText("Tipo"), "Alternador");
+    await userEvent.type(within(dialog).getByLabelText("Vehículo opcional"), "AA123BB");
     await userEvent.type(within(dialog).getByLabelText("Marca"), "Bosch");
     await userEvent.type(within(dialog).getByLabelText("Referencia"), "ALT");
     await userEvent.type(within(dialog).getByLabelText("Identificador"), "ALT-90");
@@ -376,7 +395,7 @@ describe("asset list and detail pages", () => {
       customerId: "c1",
       componentTypeId: "ct1",
       vehicleId: "v1",
-      brand: "Bosch",
+      brandId: "br-bosch",
       reference: "ALT",
       identifier: "ALT-90",
       notes: null,
@@ -405,6 +424,7 @@ describe("asset list and detail pages", () => {
         });
       }
       if (requestUrl.pathname.endsWith("/component-types/options")) return Response.json(componentTypeOptionsResponse);
+      if (requestUrl.pathname.endsWith("/brands/options")) return Response.json(brandOptionsResponse);
       if (requestUrl.pathname.endsWith("/vehicles/options")) {
         const customerId = requestUrl.searchParams.get("customerId");
         return Response.json({
@@ -423,15 +443,16 @@ describe("asset list and detail pages", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Nuevo componente" }));
     const dialog = await screen.findByRole("dialog");
-    await userEvent.click(within(dialog).getByLabelText("Cliente"));
-    fireEvent.click(await screen.findByText("Cliente Uno"));
-    await userEvent.click(within(dialog).getByLabelText("Tipo"));
-    await userEvent.click(await screen.findByRole("option", { name: "Alternador" }));
-    await userEvent.click(within(dialog).getByLabelText("Vehículo opcional"));
-    fireEvent.click(await screen.findByText("AA123BB"));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/customers/options"))).toBe(true));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/component-types/options"))).toBe(true));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/brands/options"))).toBe(true));
+    await userEvent.type(within(dialog).getByLabelText("Cliente"), "Cliente Uno");
+    await userEvent.type(within(dialog).getByLabelText("Tipo"), "Alternador");
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/vehicles/options") && String(url).includes("customerId=c1"))).toBe(true));
+    await userEvent.type(within(dialog).getByLabelText("Vehículo opcional"), "AA123BB");
 
-    await userEvent.click(within(dialog).getByLabelText("Cliente"));
-    fireEvent.click(await screen.findByText("Cliente Dos"));
+    await userEvent.clear(within(dialog).getByLabelText("Cliente"));
+    await userEvent.type(within(dialog).getByLabelText("Cliente"), "Cliente Dos");
 
     await waitFor(() =>
       expect(

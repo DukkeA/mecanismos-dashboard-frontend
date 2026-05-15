@@ -1,4 +1,5 @@
 import type { PaginationMeta } from "@/lib/customers/types";
+import type { CustomerDocumentType } from "@/lib/customers/types";
 import { normalizeRichTextNote, type RichTextNote } from "@/lib/rich-text";
 
 export type ReferenceOption<Context = Record<string, unknown>> = {
@@ -31,14 +32,25 @@ export type Vehicle = {
 };
 
 export type VehicleFormPayload = {
-  customerId: string;
-  brand: string;
+  customerId?: string;
+  customer?: {
+    name: string;
+    phone: string;
+    documentType: CustomerDocumentType;
+    documentNumber: string;
+    email?: string;
+    notes?: RichTextNote;
+    isActive?: boolean;
+  };
+  brandId?: string;
+  brand?: string | { name: string };
+  brandName?: string;
   modelReference: string;
   plate: string;
   notes?: RichTextNote;
 };
 
-export type VehicleUpdatePayload = Omit<VehicleFormPayload, "customerId">;
+export type VehicleUpdatePayload = Omit<VehicleFormPayload, "customerId" | "customer">;
 
 export type VehicleListParams = {
   page: number;

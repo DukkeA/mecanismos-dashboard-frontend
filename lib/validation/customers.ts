@@ -14,7 +14,7 @@ export const customerFormSchema = z.object({
   documentType: z.enum(CUSTOMER_DOCUMENT_TYPES).default("NIT"),
   documentNumber: z.string().trim().min(3, "Ingresá un documento válido."),
   email: optionalText.pipe(z.email("Ingresá un email válido.").optional()),
-  phone: optionalText,
+  phone: z.string({ error: "Ingresá un teléfono válido." }).trim().min(3, "Ingresá un teléfono válido."),
   notes: richTextNoteSchema.optional().default(null),
   status: z.enum(CUSTOMER_STATUSES).default("active"),
 });

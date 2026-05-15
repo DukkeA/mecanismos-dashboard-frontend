@@ -128,6 +128,7 @@ describe("customer TanStack Query hooks", () => {
       name: "Nuevo",
       documentType: "NIT",
       documentNumber: "31",
+      phone: "291 555-0101",
       status: "active",
     });
 
@@ -135,6 +136,7 @@ describe("customer TanStack Query hooks", () => {
       name: "Nuevo",
       documentType: "NIT",
       documentNumber: "31",
+      phone: "291 555-0101",
       isActive: true,
     });
 
@@ -149,7 +151,7 @@ describe("customer TanStack Query hooks", () => {
     await expect(
       update.result.current.mutateAsync({
         id: "c1",
-        input: { name: "Fallido", documentType: "CEDULA", documentNumber: "30", status: "inactive" },
+        input: { name: "Fallido", documentType: "CEDULA", documentNumber: "30", phone: "291 555-0102", status: "inactive" },
       }),
     ).rejects.toThrow("No");
 

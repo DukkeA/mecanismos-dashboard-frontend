@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import type { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import { RequiredFieldLabel } from "@/components/required-field-label";
 import { RichTextField } from "@/components/rich-text/rich-text-field";
 import {
   Dialog,
@@ -114,6 +115,7 @@ export function CustomerFormDialog({ customer, trigger }: Props) {
                 value={values.name}
                 error={errors.name}
                 disabled={isPending}
+                required
                 onChange={(value) => updateField("name", value)}
               />
               <TextField
@@ -122,10 +124,11 @@ export function CustomerFormDialog({ customer, trigger }: Props) {
                 value={values.documentNumber}
                 error={errors.documentNumber}
                 disabled={isPending}
+                required
                 onChange={(value) => updateField("documentNumber", value)}
               />
               <Field data-invalid={Boolean(errors.documentType)} data-disabled={isPending}>
-                <FieldLabel htmlFor="customer-document-type">Tipo de documento</FieldLabel>
+                <RequiredFieldLabel htmlFor="customer-document-type">Tipo de documento</RequiredFieldLabel>
                 <Select
                   value={values.documentType ?? "NIT"}
                   onValueChange={(value) =>
@@ -160,6 +163,7 @@ export function CustomerFormDialog({ customer, trigger }: Props) {
                 value={values.phone ?? ""}
                 error={errors.phone}
                 disabled={isPending}
+                required
                 onChange={(value) => updateField("phone", value)}
               />
               <Field data-invalid={Boolean(errors.status)} data-disabled={isPending}>
@@ -212,6 +216,7 @@ function TextField({
   value,
   error,
   disabled,
+  required,
   onChange,
   type = "text",
 }: {
@@ -220,12 +225,13 @@ function TextField({
   value: string;
   error?: string;
   disabled?: boolean;
+  required?: boolean;
   onChange: (value: string) => void;
   type?: React.HTMLInputTypeAttribute;
 }) {
   return (
     <Field data-invalid={Boolean(error)} data-disabled={disabled}>
-      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      {required ? <RequiredFieldLabel htmlFor={id}>{label}</RequiredFieldLabel> : <FieldLabel htmlFor={id}>{label}</FieldLabel>}
       <Input
         id={id}
         type={type}

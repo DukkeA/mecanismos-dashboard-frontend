@@ -42,6 +42,23 @@ describe("customer validation schemas", () => {
     expect(result.error?.flatten().fieldErrors.email?.[0]).toBe(
       "Ingresá un email válido.",
     );
+    expect(result.error?.flatten().fieldErrors.phone?.[0]).toBe(
+      "Ingresá un teléfono válido.",
+    );
+  });
+
+  it("requires customer phone for backend create and update payloads", () => {
+    const result = customerCreateSchema.safeParse({
+      name: "Transporte Austral",
+      documentNumber: "30-12345678-9",
+      documentType: "NIT",
+      phone: " ",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.flatten().fieldErrors.phone?.[0]).toBe(
+      "Ingresá un teléfono válido.",
+    );
   });
 
   it("accepts only the backend customer document type enum values", () => {

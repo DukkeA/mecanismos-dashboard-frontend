@@ -3,6 +3,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { brandsQueryKeys } from "@/hooks/use-brands";
 import { componentTypesQueryKeys } from "@/hooks/use-component-types";
 import { customersQueryKeys } from "@/hooks/use-customers";
 import { vehiclesQueryKeys } from "@/hooks/use-vehicles";
@@ -136,6 +137,7 @@ async function invalidateComponentData(
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: componentsQueryKeys.lists() }),
     queryClient.invalidateQueries({ queryKey: componentsQueryKeys.options() }),
+    queryClient.invalidateQueries({ queryKey: brandsQueryKeys.options() }),
     queryClient.invalidateQueries({ queryKey: componentTypesQueryKeys.options() }),
     component
       ? queryClient.invalidateQueries({ queryKey: componentsQueryKeys.detail(component.id) })

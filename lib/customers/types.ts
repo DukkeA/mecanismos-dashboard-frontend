@@ -48,7 +48,7 @@ export type CustomerFormPayload = {
   documentType: CustomerDocumentType;
   documentNumber: string;
   email?: string;
-  phone?: string;
+  phone: string;
   notes?: RichTextNote;
   status?: CustomerStatus;
 };
@@ -59,7 +59,7 @@ export type CustomerCreateDto = {
   documentNumber: string;
   isActive?: boolean;
   email?: string;
-  phone?: string;
+  phone: string;
   notes?: RichTextNote;
 };
 
