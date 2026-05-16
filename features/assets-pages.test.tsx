@@ -217,6 +217,37 @@ describe("asset list and detail pages", () => {
     expect(body).not.toHaveProperty("sortBy");
   });
 
+  it("creates vehicles with a new typed brand and preserves brand text on blur", async () => {
+    const fetchMock = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+      if (url.includes("/brands/options")) return Response.json(brandOptionsResponse);
+      if (url.endsWith("/vehicles") && init?.method === "POST") {
+        return Response.json({ id: "v1", customerId: "c1", plate: "AA123BB", brand: "Acme Nueva", modelReference: "FH" });
+      }
+      return Response.json({ data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 1 } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderWithQuery(<VehicleFormDialog initialCustomerId="c1" trigger={<button type="button">Nuevo vehículo</button>} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Nuevo vehículo" }));
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/brands/options"))).toBe(true));
+
+    await userEvent.type(within(dialog).getByLabelText("Marca"), "Acme Nueva");
+    await userEvent.click(within(dialog).getByLabelText("Modelo / referencia"));
+    expect(within(dialog).getByLabelText("Marca")).toHaveValue("Acme Nueva");
+    await userEvent.type(within(dialog).getByLabelText("Modelo / referencia"), "FH");
+    await userEvent.type(within(dialog).getByLabelText("Placa"), "AA123BB");
+
+    fireEvent.submit(document.getElementById("vehicle-form") as HTMLFormElement);
+
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url, init]) => String(url).endsWith("/vehicles") && init?.method === "POST")).toBe(true));
+    const postCall = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith("/vehicles") && init?.method === "POST");
+    const body = JSON.parse(String(postCall?.[1]?.body));
+    expect(body).toMatchObject({ customerId: "c1", brandName: "Acme Nueva", plate: "AA123BB" });
+    expect(body).not.toHaveProperty("brandId");
+  });
+
   it("disables vehicle form submit while pending and shows success toast", async () => {
     let resolveCreate: (response: Response) => void = () => undefined;
     const createResponse = new Promise<Response>((resolve) => {
@@ -410,6 +441,34 @@ describe("asset list and detail pages", () => {
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["component-types", "options"] });
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["customers", "detail", "c1"] });
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["vehicles", "detail", "v1"] });
+  });
+
+  it("creates components with a new typed brand and preserves brand text on blur", async () => {
+    const fetchMock = mockComponentFormFetch(Response.json(componentResponse));
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderWithQuery(
+      <ComponentFormDialog initialCustomerId="c1" trigger={<button type="button">Nuevo componente</button>} />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Nuevo componente" }));
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/component-types/options"))).toBe(true));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/brands/options"))).toBe(true));
+
+    await userEvent.type(within(dialog).getByLabelText("Tipo"), "Alternador");
+    await userEvent.type(within(dialog).getByLabelText("Marca"), "Acme Nueva");
+    await userEvent.click(within(dialog).getByLabelText("Referencia"));
+    expect(within(dialog).getByLabelText("Marca")).toHaveValue("Acme Nueva");
+    await userEvent.type(within(dialog).getByLabelText("Referencia"), "ALT");
+
+    fireEvent.submit(document.getElementById("component-form") as HTMLFormElement);
+
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url, init]) => String(url).endsWith("/components") && init?.method === "POST")).toBe(true));
+    const postCall = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith("/components") && init?.method === "POST");
+    const body = JSON.parse(String(postCall?.[1]?.body));
+    expect(body).toMatchObject({ customerId: "c1", componentTypeId: "ct1", brandName: "Acme Nueva", reference: "ALT" });
+    expect(body).not.toHaveProperty("brandId");
   });
 
   it("clears a previously selected vehicle and scopes vehicle options when component customer changes", async () => {

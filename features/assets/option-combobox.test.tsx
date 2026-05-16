@@ -80,6 +80,50 @@ describe("OptionCombobox", () => {
       "aria-required": true,
     });
   });
+
+  it("preserves free text when Base UI clears input on popup close without a selection", () => {
+    const onInputValueChange = vi.fn();
+
+    renderOptionCombobox({
+      freeText: true,
+      inputValue: "Cliente nuevo",
+      onInputValueChange,
+    });
+
+    const onRootInputValueChange = comboboxMock.rootProps.at(-1)
+      ?.onInputValueChange as (value: string, details: { reason: string }) => void;
+    onRootInputValueChange("", { reason: "focus-out" });
+
+    expect(onInputValueChange).not.toHaveBeenCalled();
+  });
+
+  it("keeps intentional clear actions working in free-text mode", () => {
+    const onInputValueChange = vi.fn();
+
+    renderOptionCombobox({
+      freeText: true,
+      inputValue: "Cliente nuevo",
+      onInputValueChange,
+    });
+
+    const onRootInputValueChange = comboboxMock.rootProps.at(-1)
+      ?.onInputValueChange as (value: string, details: { reason: string }) => void;
+    onRootInputValueChange("", { reason: "input-clear" });
+
+    expect(onInputValueChange).toHaveBeenCalledWith("");
+  });
+
+  it("keeps non-free-text reset behavior unchanged", () => {
+    const onInputValueChange = vi.fn();
+
+    renderOptionCombobox({ inputValue: "Cliente nuevo", onInputValueChange });
+
+    const onRootInputValueChange = comboboxMock.rootProps.at(-1)
+      ?.onInputValueChange as (value: string, details: { reason: string }) => void;
+    onRootInputValueChange("", { reason: "focus-out" });
+
+    expect(onInputValueChange).toHaveBeenCalledWith("");
+  });
 });
 
 function renderOptionCombobox(

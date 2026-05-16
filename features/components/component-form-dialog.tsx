@@ -215,6 +215,7 @@ export function ComponentFormDialog({
                 isFetching={customersQuery.isFetching}
                 modal
                 portalContainer={dialogContentRef}
+                freeText
                 onInputValueChange={(value) => {
                   setCustomerSearch(value);
                   if (values.customerId && value.trim()) return;
@@ -248,6 +249,7 @@ export function ComponentFormDialog({
               isFetching={componentTypeOptionsQuery.isFetching}
               modal
               portalContainer={dialogContentRef}
+              freeText
               onInputValueChange={(value) => {
                 setComponentTypeSearch(value);
                 if (values.componentTypeId && value.trim()) return;
@@ -301,20 +303,33 @@ export function ComponentFormDialog({
               </Button>
             ) : null}
             <div className="grid gap-4 md:grid-cols-2">
-              <TextField
+              <OptionCombobox
                 id="component-brand"
                 label="Marca"
-                value={brandSearch}
+                value={values.brandId}
+                options={brandOptions}
+                inputValue={brandSearch}
+                placeholder="Buscar o escribir marca"
+                emptyText="No encontramos marcas. Se creará al guardar."
                 error={errors.brand}
                 disabled={isPending}
                 required
-                onChange={(value) => {
+                isFetching={brandOptionsQuery.isFetching}
+                modal
+                portalContainer={dialogContentRef}
+                freeText
+                onInputValueChange={(value) => {
                   setBrandSearch(value);
                   const exact = brandOptions.find(
                     (option) => canonicalizeLookupLabel(option.label) === canonicalizeLookupLabel(value),
                   );
                   updateField("brandId", exact?.id ?? "");
                   updateField("brand", exact?.label ?? value);
+                }}
+                onValueChange={(option) => {
+                  updateField("brandId", option?.id ?? "");
+                  updateField("brand", option?.label ?? brandSearch);
+                  if (option) setBrandSearch(option.label);
                 }}
               />
               <TextField id="component-reference" label="Referencia" value={values.reference} error={errors.reference} disabled={isPending} required onChange={(value) => updateField("reference", value)} />

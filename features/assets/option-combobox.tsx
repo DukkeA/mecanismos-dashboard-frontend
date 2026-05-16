@@ -1,6 +1,7 @@
 "use client";
 
-import type { RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
+import type { Combobox as ComboboxPrimitive } from "@base-ui/react";
 import { SearchIcon } from "lucide-react";
 
 import {
@@ -37,6 +38,7 @@ export function OptionCombobox({
   isFetching,
   modal,
   portalContainer,
+  freeText,
   onInputValueChange,
   onValueChange,
 }: {
@@ -54,14 +56,45 @@ export function OptionCombobox({
   isFetching?: boolean;
   modal?: boolean;
   portalContainer?: HTMLElement | null | RefObject<HTMLElement | null>;
+  freeText?: boolean;
   onInputValueChange: (value: string) => void;
   onValueChange: (value: ComboboxOption | null) => void;
 }) {
   const resolvedSelectedOption =
     selectedOptionProp ?? options.find((option) => option.id === value) ?? null;
+  const comboboxValue =
+    resolvedSelectedOption ??
+    (freeText && inputValue.trim()
+      ? { id: `__free_text__:${inputValue}`, label: inputValue, description: null }
+      : null);
+  const latestInputValueRef = useRef(inputValue);
+
+  useEffect(() => {
+    latestInputValueRef.current = inputValue;
+  }, [inputValue]);
 
   function selectOption(option: ComboboxOption | null) {
     onValueChange(option);
+  }
+
+  function handleInputValueChange(
+    nextInputValue: string,
+    eventDetails?: ComboboxPrimitive.Root.ChangeEventDetails,
+  ) {
+    if (
+      shouldIgnoreFreeTextReset({
+        freeText,
+        currentInputValue: latestInputValueRef.current,
+        nextInputValue,
+        selectedOption: resolvedSelectedOption,
+        reason: eventDetails?.reason,
+      })
+    ) {
+      return;
+    }
+
+    latestInputValueRef.current = nextInputValue;
+    onInputValueChange(nextInputValue);
   }
 
   return (
@@ -73,11 +106,11 @@ export function OptionCombobox({
       )}
       <Combobox
         items={options}
-        value={resolvedSelectedOption}
+        value={comboboxValue}
         modal={modal}
         itemToStringValue={(option: ComboboxOption) => option.label}
         inputValue={inputValue}
-        onInputValueChange={onInputValueChange}
+        onInputValueChange={handleInputValueChange}
         onValueChange={(option: ComboboxOption | null) => selectOption(option)}
       >
         <ComboboxInput
@@ -86,7 +119,10 @@ export function OptionCombobox({
           disabled={disabled}
           aria-invalid={Boolean(error)}
           aria-required={required || undefined}
-          onChange={(event) => onInputValueChange(event.currentTarget.value)}
+          onChange={(event) => {
+            latestInputValueRef.current = event.currentTarget.value;
+            onInputValueChange(event.currentTarget.value);
+          }}
           showClear
         >
           <InputGroupAddon>
@@ -117,5 +153,30 @@ export function OptionCombobox({
       </Combobox>
       <FieldError errors={[{ message: error }]} />
     </Field>
+  );
+}
+
+function shouldIgnoreFreeTextReset({
+  freeText,
+  currentInputValue,
+  nextInputValue,
+  selectedOption,
+  reason,
+}: {
+  freeText?: boolean;
+  currentInputValue: string;
+  nextInputValue: string;
+  selectedOption: ComboboxOption | null;
+  reason?: ComboboxPrimitive.Root.ChangeEventDetails["reason"];
+}) {
+  const isIntentionalClear =
+    reason === "input-clear" || reason === "clear-press";
+
+  return Boolean(
+    freeText &&
+      !selectedOption &&
+      currentInputValue.trim() &&
+      nextInputValue === "" &&
+      !isIntentionalClear,
   );
 }
